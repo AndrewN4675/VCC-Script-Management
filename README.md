@@ -28,17 +28,12 @@ The current system for managing these scripts is inefficient and makes it diffic
 
 Before running the project, ensure you have the following installed:
 
--Git
+- Git
+- Docker (with Docker Compose)
+- Node.js (v20 or newer)
+- npm (v9 or newer)
 
--Docker
-
--Docker Compose
-
--Node.js (v18 or newer)
-
--npm (v9 or newer)
-
-Docker is the recommended method for running the project.
+The database and backend run in Docker. The frontend runs locally with the Vite dev server.
 
 ### Add-ons
 
@@ -46,7 +41,7 @@ The system includes the following components and add-ons:
 
 -Docker containerization for consistent development and deployment
 
--PostgreSQL database for persistent data storage
+-MongoDB database for persistent data storage (plus SQLite for the actor database)
 
 -JWT authentication for secure user sessions
 
@@ -60,19 +55,40 @@ The system includes the following components and add-ons:
 
 ### Installation Steps
 
-1) Clone the repository
-git clone https://github.com/your-organization/vcc-script-management.git
-cd vcc-script-management
+1) Clone the repository and enter it:
 
-2) Build and start the application using Docker:
-docker compose build
-docker compose up
+```bash
+git clone <repository-url>
+cd VCC-Script-Management
+```
 
-4) If running for the first time, initialize the database:
-docker compose exec backend rake db:create db:migrate db:seed
+2) In a terminal at the repo root, start the database and backend:
 
-Once complete, the application will be available at:
-http://localhost:8080
+```bash
+docker compose up --build mongodb backend
+```
+
+This starts MongoDB and the Go API at http://localhost:8080. The defaults work without a `.env` file, and no manual database setup is needed.
+
+3) In a second terminal, start the frontend:
+
+```bash
+cd code/Frontend
+npm install
+cp .env.example .env.local   # PowerShell: Copy-Item .env.example .env.local
+npm run dev
+```
+
+`npm install` and the `.env.local` copy are only needed the first time (or after `node_modules` is deleted or `package.json` changes).
+
+4) Open the app at http://localhost:5173.
+
+Notes:
+
+- Use `code/Frontend`. The `Frontend` folder at the repo root is legacy.
+- Okta login is configured in `.env.local`. To use the local login page instead (with "Skip Login" and "Admin" buttons), remove the `VITE_OKTA_*` lines.
+- To run the frontend without the backend, set `VITE_USE_MOCK=true` in `.env.local`.
+- See `code/Frontend/README.md` for more frontend details.
 
 ## Functionality
 
@@ -80,7 +96,7 @@ Our current functionality includes:
 
 -Frontend user interface for interacting with scripts and system features
 
--Backend REST API connected to a PostgreSQL database
+-Backend REST API connected to a MongoDB database
 
 -Actor database capable of storing and searching actor information
 
