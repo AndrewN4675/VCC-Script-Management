@@ -48,7 +48,7 @@ Go 1.25.1 is required only when building or running the backend outside Docker. 
 2. Start MongoDB and the backend from the repository root:
 
    ```bash
-   docker compose up --build mongodb backend
+   docker compose -f Docker/docker-compose.yml up --build mongodb backend
    ```
 
    Docker Compose uses development defaults, so a `.env` file is not required. The backend is available at `http://localhost:8080`. The container initializes MongoDB and includes the SQLite actor database shipped in the repository; there is no separate seed command.

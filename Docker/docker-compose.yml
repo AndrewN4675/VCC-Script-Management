@@ -1,3 +1,6 @@
+# Keeps the project (and volume) names the same as when this file lived at the repo root.
+name: vcc-script-management
+
 services:
   mongodb:
     image: mongo:7
@@ -19,8 +22,8 @@ services:
 
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: Docker/Dockerfile
     container_name: backend
     restart: unless-stopped
     networks:
