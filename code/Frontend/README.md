@@ -63,7 +63,7 @@ From repo root:
 
 This starts:
 
-- `docker compose up --build mongodb backend`
+- `docker compose -f Docker/docker-compose.yml up --build mongodb backend`
 - `npm run dev` in `code/Frontend`
 
 Use `.\start-dev.ps1 -NoBuild` for faster restarts.
