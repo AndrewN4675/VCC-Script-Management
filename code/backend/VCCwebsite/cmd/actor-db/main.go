@@ -1,7 +1,7 @@
 package main
 
 import (
-	"VCCwebsite/internal/actordb"
+	"VCCwebsite/internal/actorDB"
 	"context"
 	"log"
 	"os"
