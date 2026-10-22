@@ -17,7 +17,7 @@ Frontend for the VCC Standardized Patient File Management System.
 
 ## Prerequisites
 
-- Node.js 20+ (recommended; Docker image also uses Node 20)
+- Node.js 24+ (recommended; Docker image also uses Node 24)
 - npm 9+
 - Backend running at `http://localhost:8080` for API mode
 

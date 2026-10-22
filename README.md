@@ -20,7 +20,7 @@ Install the following before starting:
 
 - Git
 - Docker Desktop with Docker Compose
-- Node.js 20 or newer
+- Node.js 24 or newer
 - npm 9 or newer
 
 Go 1.25.1 is required only when building or running the backend outside Docker. The normal installation uses the Go toolchain inside the Docker build.

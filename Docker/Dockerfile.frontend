@@ -1,5 +1,5 @@
-# Build with the frontend as context: docker build -f Docker/Dockerfile.frontend code/Frontend
-FROM node:20-alpine AS builder
+# Place at: code/Frontend/Dockerfile.frontend
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
