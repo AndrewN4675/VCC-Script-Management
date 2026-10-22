@@ -14,10 +14,6 @@ func Login(authMiddleware *auth.AuthMiddleware) http.HandlerFunc {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if authMiddleware == nil {
-			http.Error(w, "auth not configured", http.StatusNotImplemented)
-			return
-		}
 		var req struct {
 			Email    string `json:"email"`
 			Password string `json:"password"`

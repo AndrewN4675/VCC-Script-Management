@@ -87,8 +87,4 @@ func TestLoginBadRequests(t *testing.T) {
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("GET: status = %d, want 405", rec.Code)
 	}
-
-	if rec := postLogin(Login(nil), `{"email":"admin@example.com","password":"pw"}`); rec.Code != http.StatusNotImplemented {
-		t.Errorf("no secret configured: status = %d, want 501", rec.Code)
-	}
 }

@@ -501,7 +501,7 @@ const ScriptDetail = ({ requestInlineOnly = false }) => {
   const isAdmin = (() => {
     if (typeof window === "undefined") return false;
     const role = (localStorage.getItem("role") || "").trim().toLowerCase();
-    return role === "admin" || role === "";
+    return role === "admin";
   })();
   const useMock = import.meta.env.VITE_USE_MOCK === "true";
   const item = requestInlineOnly ? null : (getById ? getById(id) : null);

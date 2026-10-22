@@ -51,7 +51,7 @@ Go 1.25.1 is required only when building or running the backend outside Docker. 
    docker compose -f Docker/docker-compose.yml up --build mongodb backend
    ```
 
-   Docker Compose uses development defaults, so a `.env` file is not required. The backend is available at `http://localhost:8080`. The container initializes MongoDB and includes the SQLite actor database shipped in the repository; there is no separate seed command.
+   The backend refuses to start without `JWT_SECRET`. Copy `.env.example` to `.env` in the repository root and set `JWT_SECRET` (the file explains how to generate one); the other settings have development defaults. The backend is available at `http://localhost:8080`. The container initializes MongoDB and includes the SQLite actor database shipped in the repository; there is no separate seed command.
 
 3. In a second terminal, install and start the active frontend:
 
@@ -85,7 +85,7 @@ Run the Docker services and Vite frontend in separate terminals. Stop each proce
 #### Authentication and local development options
 
 - The copied `.env.local` enables the configured Okta mode. A valid Okta client configuration is required to complete organization login.
-- To use the local login page and its `Skip Login` and `Admin` options, remove the `VITE_OKTA_ISSUER` and `VITE_OKTA_CLIENT_ID` settings from `.env.local`.
+- To use the local email/password login page instead of Okta, remove the `VITE_OKTA_ISSUER` and `VITE_OKTA_CLIENT_ID` settings from `.env.local`.
 - To run the frontend without the backend, set `VITE_USE_MOCK=true` in `.env.local`, then run `npm run dev`.
 - The active frontend is `code/Frontend`. The root-level `Frontend` directory is legacy and should not be used for development.
 
