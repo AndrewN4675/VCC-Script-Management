@@ -4,17 +4,6 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 // handles get token
 const getToken = () => {
   try {
-    // First try to get Okta token
-    const oktaTokenStorage = localStorage.getItem('okta-token-storage');
-    if (oktaTokenStorage) {
-      const parsed = JSON.parse(oktaTokenStorage);
-      const accessToken = parsed?.accessToken?.accessToken;
-      if (accessToken) {
-        return accessToken;
-      }
-    }
-    
-    // Fallback to legacy token for backward compatibility
     return localStorage.getItem('token');
   } catch {
     return null;
@@ -58,7 +47,7 @@ export const api = {
   login: (email, password) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
 
-  // User info from Okta
+  // Current user info
   getCurrentUser: () => request('/user'),
 
   // Document APIs

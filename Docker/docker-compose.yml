@@ -40,9 +40,10 @@ services:
       STATIC_PATH: /app/static
       ACTOR_DB_PATH: /app/data/actor.db
       ACTOR_SCHEMA_PATH: /app/internal/actorDB/actor_schema.sql
-      # Okta OAuth Configuration
-      OKTA_ISSUER: ${OKTA_ISSUER:-https://login.wsu.edu/oauth2/default}
-      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID:-0oa19yes4cwMmJvwk2p8}
+      # Okta OAuth Configuration (disabled; kept for reference. The full working
+      # version is at git tag "okta-reference".)
+      # OKTA_ISSUER: ${OKTA_ISSUER:-https://login.wsu.edu/oauth2/default}
+      # OKTA_CLIENT_ID: ${OKTA_CLIENT_ID:-0oa19yes4cwMmJvwk2p8}
     ports:
       - "${PORT:-8080}:8080"
     volumes:

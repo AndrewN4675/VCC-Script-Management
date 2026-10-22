@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Security, LoginCallback } from "@okta/okta-react";
-import { toRelativeUrl } from "@okta/okta-auth-js";
 import Layout from "./pages/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -16,12 +14,10 @@ import ActorDatabase from "./pages/ActorDatabase";
 import { StoreProvider } from "./store";
 import { ToastProvider } from "./components/Toast";
 import RequireAuth from "./components/RequireAuth";
-import { isOktaConfigured, oktaAuth } from "./oktaConfig";
 
 /* Defines routes, wraps app in storeprovider, toastprovider,browserrouter
-applies layout as shared cell for nested pages. Switches authentication 
-behavior based on okta config, enabling okta security wrapper and callback 
-route when configured. Enforces admin route access through requireauth
+applies layout as shared cell for nested pages. Enforces admin route access
+through requireauth. Okta support is disabled; see README ("Okta (disabled)").
 */
 const AppRoutes = () => (
   <Routes>
@@ -29,17 +25,16 @@ const AppRoutes = () => (
       <Route
         index
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <Home />
           </RequireAuth>
         }
       />
-      <Route path="login" element={<Login oktaEnabled={isOktaConfigured} />} />
-      {isOktaConfigured ? <Route path="login/callback" element={<LoginCallback />} /> : null}
+      <Route path="login" element={<Login />} />
       <Route
         path="dashboard"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <Dashboard />
           </RequireAuth>
         }
@@ -47,7 +42,7 @@ const AppRoutes = () => (
       <Route
         path="forms-search"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <FormsSearch />
           </RequireAuth>
         }
@@ -55,7 +50,7 @@ const AppRoutes = () => (
       <Route
         path="requests"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <Requests />
           </RequireAuth>
         }
@@ -63,7 +58,7 @@ const AppRoutes = () => (
       <Route
         path="request-new"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured} requiredRole="admin" redirectTo="/create-script">
+          <RequireAuth requiredRole="admin" redirectTo="/create-script">
             <RequestNew />
           </RequireAuth>
         }
@@ -71,7 +66,7 @@ const AppRoutes = () => (
       <Route
         path="clone-new"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured} requiredRole="admin" redirectTo="/create-script">
+          <RequireAuth requiredRole="admin" redirectTo="/create-script">
             <RequestNew mode="clone" />
           </RequireAuth>
         }
@@ -79,7 +74,7 @@ const AppRoutes = () => (
       <Route
         path="create-script"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <CreateScript />
           </RequireAuth>
         }
@@ -87,7 +82,7 @@ const AppRoutes = () => (
       <Route
         path="forms/:id"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <ScriptDetail />
           </RequireAuth>
         }
@@ -95,7 +90,7 @@ const AppRoutes = () => (
       <Route
         path="requests/forms/:id"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <ScriptDetail requestInlineOnly />
           </RequireAuth>
         }
@@ -103,7 +98,7 @@ const AppRoutes = () => (
       <Route
         path="sp-search"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <SpSearch />
           </RequireAuth>
         }
@@ -111,7 +106,7 @@ const AppRoutes = () => (
       <Route
         path="forms-reviewer"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <FormsReviewer />
           </RequireAuth>
         }
@@ -119,7 +114,7 @@ const AppRoutes = () => (
       <Route
         path="actor-database"
         element={
-          <RequireAuth oktaEnabled={isOktaConfigured}>
+          <RequireAuth>
             <ActorDatabase />
           </RequireAuth>
         }
@@ -129,28 +124,14 @@ const AppRoutes = () => (
 );
 
 // handles app
-const App = () => {
-  // handles restore original uri
-  const restoreOriginalUri = async (_okta, originalUri) => {
-    const next = toRelativeUrl(String(originalUri || "/dashboard"), window.location.origin);
-    window.location.replace(next);
-  };
-
-  return (
-    <StoreProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          {isOktaConfigured && oktaAuth ? (
-            <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
-              <AppRoutes />
-            </Security>
-          ) : (
-            <AppRoutes />
-          )}
-        </BrowserRouter>
-      </ToastProvider>
-    </StoreProvider>
-  );
-};
+const App = () => (
+  <StoreProvider>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ToastProvider>
+  </StoreProvider>
+);
 
 export default App;

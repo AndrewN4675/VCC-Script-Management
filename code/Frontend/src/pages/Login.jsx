@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOktaAuth } from "@okta/okta-react";
 
 const useMock = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -30,74 +29,8 @@ const LoginForm = ({ onSubmit, email, setEmail, password, setPassword }) => (
   </form>
 );
 
-// handles login legacy
-const LoginLegacy = ({ email, setEmail, password, setPassword, handleLogin }) => (
-  <LoginForm
-    onSubmit={handleLogin}
-    email={email}
-    setEmail={setEmail}
-    password={password}
-    setPassword={setPassword}
-  />
-);
-
-// handles login okta
-const LoginOkta = ({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  handleLogin,
-  navigate,
-}) => {
-  const { oktaAuth, authState } = useOktaAuth();
-
-  useEffect(() => {
-    if (authState?.isAuthenticated) {
-      navigate("/dashboard");
-    }
-  }, [authState, navigate]);
-
-  const handleOktaLogin = async () => {
-    if (!oktaAuth) return;
-    await oktaAuth.signInWithRedirect();
-  };
-
-  return (
-    <>
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={handleOktaLogin}
-          disabled={!oktaAuth}
-          className="w-full inline-flex items-center justify-center rounded-md bg-[#981e32] px-4 py-3 text-white font-medium hover:bg-[#7a1828] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          Login with WSU
-        </button>
-      </div>
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with</span>
-        </div>
-      </div>
-
-      <LoginLegacy
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        handleLogin={handleLogin}
-      />
-    </>
-  );
-};
-
 // handles login
-const Login = ({ oktaEnabled = false }) => {
+const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -128,24 +61,13 @@ const Login = ({ oktaEnabled = false }) => {
   return (
     <section className="max-w-md mx-auto my-8 p-6 bg-white rounded-lg shadow">
       <h1 className="text-3xl font-bold mb-6">Login</h1>
-      {oktaEnabled ? (
-        <LoginOkta
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleLogin={handleLogin}
-          navigate={navigate}
-        />
-      ) : (
-        <LoginLegacy
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleLogin={handleLogin}
-        />
-      )}
+      <LoginForm
+        onSubmit={handleLogin}
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+      />
     </section>
   );
 };
