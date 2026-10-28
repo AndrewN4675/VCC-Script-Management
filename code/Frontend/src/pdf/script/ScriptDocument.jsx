@@ -21,8 +21,12 @@ import {
   Part14,
   Part15,
 } from "./parts";
-import { PAGE_LAYOUT, SCRIPT_PARTS, TOC_GROUPS } from "./layout";
-import { PartLabelsContext, buildPartLabels, formatPartTitle } from "./numbering";
+import { AUDIENCES, PAGE_LAYOUT, SCRIPT_PARTS, TOC_GROUPS } from "./layout";
+import {
+  PartLabelsContext,
+  buildPartLabels,
+  formatPartTitle,
+} from "./numbering";
 import { COLORS, styles } from "./theme";
 
 const PART_COMPONENTS = {
@@ -53,19 +57,48 @@ const SCRIPT_NOTE = [
 ];
 
 // handles cover page
-const CoverPage = ({ model }) => (
+const CoverPage = ({ model, versionLabel }) => (
   <Page size="LETTER" style={styles.page}>
-    <Image src={logoImage} style={{ width: 260, height: 260 * (536 / 1503), marginBottom: 12 }} />
-    <View style={{ borderTopWidth: 0.75, borderColor: COLORS.rule, marginBottom: 10 }} />
-    <View style={[styles.card, { flexGrow: 1, justifyContent: "space-between", marginBottom: 0 }]}>
+    <Image
+      src={logoImage}
+      style={{ width: 260, height: 260 * (536 / 1503), marginBottom: 12 }}
+    />
+    <View
+      style={{
+        borderTopWidth: 0.75,
+        borderColor: COLORS.rule,
+        marginBottom: 10,
+      }}
+    />
+    <View
+      style={[
+        styles.card,
+        { flexGrow: 1, justifyContent: "space-between", marginBottom: 0 },
+      ]}
+    >
       <Card inner style={{ marginBottom: 0 }}>
         <Text style={styles.coverTitle}>Virtual Clinical Center</Text>
-        <Text style={{ color: COLORS.muted }}>Case Modified: {model.cover.caseModified}</Text>
-        <Text style={{ color: COLORS.muted }}>Case: {model.cover.caseLine}</Text>
-        {model.cover.caseType ? <Text style={{ color: COLORS.muted }}>Case Type: {model.cover.caseType}</Text> : null}
+        <Text style={{ color: COLORS.muted }}>
+          Case Modified: {model.cover.caseModified}
+        </Text>
+        <Text style={{ color: COLORS.muted }}>
+          Case: {model.cover.caseLine}
+        </Text>
+        {model.cover.caseType ? (
+          <Text style={{ color: COLORS.muted }}>
+            Case Type: {model.cover.caseType}
+          </Text>
+        ) : null}
+        <Text style={{ color: COLORS.muted }}>Version: {versionLabel}</Text>
       </Card>
       <View>
-        <View style={{ borderTopWidth: 0.75, borderColor: COLORS.rule, marginBottom: 10 }} />
+        <View
+          style={{
+            borderTopWidth: 0.75,
+            borderColor: COLORS.rule,
+            marginBottom: 10,
+          }}
+        />
         <Card inner style={{ marginBottom: 0 }}>
           <Text style={styles.partTitle}>Case Content Warning:</Text>
           <Text>{model.cover.contentWarning || "None"}</Text>
@@ -76,13 +109,17 @@ const CoverPage = ({ model }) => (
 );
 
 // handles contents page
-const ContentsPage = ({ parts, labels }) => (
+const ContentsPage = ({ parts, labels, showScriptNote }) => (
   <Page size="LETTER" style={styles.page}>
     <Card>
       <Text style={styles.partTitle}>Table of Contents</Text>
       {TOC_GROUPS.map((group) => {
         const titles = parts
-          .filter((part) => SCRIPT_PARTS[part].group === group.id && !SCRIPT_PARTS[part].continued)
+          .filter(
+            (part) =>
+              SCRIPT_PARTS[part].group === group.id &&
+              !SCRIPT_PARTS[part].continued,
+          )
           .map((part) => formatPartTitle(part, labels));
         if (!titles.length) return null;
         return (
@@ -103,30 +140,49 @@ const ContentsPage = ({ parts, labels }) => (
           </View>
         );
       })}
-      <Text style={styles.subTitle}>Standardized Patient Script Note</Text>
-      <NoteBox style={{ marginBottom: 0 }}>
-        {SCRIPT_NOTE.map((paragraph, index) => (
-          <Text key={index} style={{ marginBottom: index < SCRIPT_NOTE.length - 1 ? 8 : 0 }}>
-            {paragraph}
-          </Text>
-        ))}
-      </NoteBox>
+      {showScriptNote ? (
+        <>
+          <Text style={styles.subTitle}>Standardized Patient Script Note</Text>
+          <NoteBox style={{ marginBottom: 0 }}>
+            {SCRIPT_NOTE.map((paragraph, index) => (
+              <Text
+                key={index}
+                style={{ marginBottom: index < SCRIPT_NOTE.length - 1 ? 8 : 0 }}
+              >
+                {paragraph}
+              </Text>
+            ))}
+          </NoteBox>
+        </>
+      ) : null}
     </Card>
   </Page>
 );
 
 // handles script document
-const ScriptDocument = ({ model }) => {
-  const isIncluded = (part) => part !== 14 || model.feedback.enabled;
-  const pages = PAGE_LAYOUT.map((page) => page.filter(isIncluded)).filter((page) => page.length);
+const ScriptDocument = ({ model, audience = "master" }) => {
+  const version = AUDIENCES[audience];
+  const isIncluded = (part) =>
+    version.groups.includes(SCRIPT_PARTS[part].group) &&
+    (part !== 14 || model.feedback.enabled);
+  const pages = PAGE_LAYOUT.map((page) => page.filter(isIncluded)).filter(
+    (page) => page.length,
+  );
   const parts = pages.flat();
   const labels = buildPartLabels(parts);
 
   return (
     <PartLabelsContext.Provider value={labels}>
-      <Document title={model.admin.names[0].value} author="Virtual Clinical Center">
-        <CoverPage model={model} />
-        <ContentsPage parts={parts} labels={labels} />
+      <Document
+        title={model.admin.names[0].value}
+        author="Virtual Clinical Center"
+      >
+        <CoverPage model={model} versionLabel={version.label} />
+        <ContentsPage
+          parts={parts}
+          labels={labels}
+          showScriptNote={version.groups.includes("sp")}
+        />
         {pages.map((page) => (
           <Page key={page.join("-")} size="LETTER" style={styles.page}>
             {page.map((part) => {

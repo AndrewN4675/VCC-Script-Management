@@ -29,6 +29,13 @@ export const TOC_GROUPS = [
   { id: "other", title: "Other" },
 ];
 
+// Which TOC groups each exported version of the script includes.
+export const AUDIENCES = {
+  master: { label: "Master", groups: ["admin", "sp", "other"], fileSuffix: "Master" },
+  faculty: { label: "Faculty", groups: ["admin", "other"], fileSuffix: "Faculty" },
+  sp: { label: "SP", groups: ["sp"], fileSuffix: "SP" },
+};
+
 export const PAGE_LAYOUT = [
   [1],
   [2],
