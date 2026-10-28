@@ -11,7 +11,7 @@ import {
   NoteBox,
   PainScale,
 } from "./components";
-import { SCRIPT_PARTS } from "./layout";
+import { usePartTitle } from "./numbering";
 import { COLORS, styles } from "./theme";
 
 const SP_OBJECTIVES = [
@@ -27,11 +27,12 @@ const GENDER_NOTE =
   + "\"What are your pronouns?\" a great answer would be \"I was assigned male at birth but prefer She/Her.\")";
 
 // handles part card
-const PartCard = ({ part, children }) => <Card title={SCRIPT_PARTS[part].title}>{children}</Card>;
+const PartCard = ({ part, children }) => <Card title={usePartTitle(part)}>{children}</Card>;
 
 // handles part 1 script details
 export const Part1 = ({ model }) => {
   const d = model.details;
+  const doorNoteTitle = usePartTitle(3);
   return (
     <PartCard part={1}>
       <Field label="Reason for Visit" value={d.reasonForVisit} />
@@ -45,9 +46,11 @@ export const Part1 = ({ model }) => {
       <Field label="Summary of patient story" value={d.summary} />
       <Field label="Case factors associated with social determinants of health" value={d.caseFactors} />
       <Field label="Instructions for additional staff" value={d.staffInstructions} emptyText="N/A" />
-      <Card inner style={{ marginTop: 8, marginBottom: 0 }}>
-        <Text>Vitals: See Part 3 – Door Note & Learner Instruction</Text>
-      </Card>
+      {doorNoteTitle ? (
+        <Card inner style={{ marginTop: 8, marginBottom: 0 }}>
+          <Text>Vitals: See {doorNoteTitle}</Text>
+        </Card>
+      ) : null}
     </PartCard>
   );
 };
@@ -137,7 +140,7 @@ export const Part6 = ({ model }) => (
 
 // handles part 7 presentation
 export const Part7 = ({ model }) => (
-  <Card title={`${SCRIPT_PARTS[7].title} (e.g. body language, non-verbal communication, verbal characteristics)`}>
+  <Card title={`${usePartTitle(7)} (e.g. body language, non-verbal communication, verbal characteristics)`}>
     <Card inner>
       <FieldList fields={model.behaviors.fields} />
     </Card>
@@ -312,7 +315,7 @@ export const Part14 = ({ model }) => (
 // handles part 15 admin notes
 export const Part15 = ({ model }) => (
   <View style={[styles.card, { flexGrow: 1 }]}>
-    <Text style={styles.partTitle}>Part 15 – Admin notes</Text>
+    <Text style={styles.partTitle}>{usePartTitle(15)}</Text>
     {model.admin.names.filter((entry) => entry.value).map((entry) => (
       <View key={entry.label} style={{ marginBottom: 2 }} wrap={false}>
         <Text>{entry.label}</Text>

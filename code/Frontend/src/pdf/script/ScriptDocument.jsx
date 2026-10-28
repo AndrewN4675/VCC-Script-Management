@@ -22,6 +22,7 @@ import {
   Part15,
 } from "./parts";
 import { PAGE_LAYOUT, SCRIPT_PARTS, TOC_GROUPS } from "./layout";
+import { PartLabelsContext, buildPartLabels, formatPartTitle } from "./numbering";
 import { COLORS, styles } from "./theme";
 
 const PART_COMPONENTS = {
@@ -75,14 +76,14 @@ const CoverPage = ({ model }) => (
 );
 
 // handles contents page
-const ContentsPage = ({ parts }) => (
+const ContentsPage = ({ parts, labels }) => (
   <Page size="LETTER" style={styles.page}>
     <Card>
       <Text style={styles.partTitle}>Table of Contents</Text>
       {TOC_GROUPS.map((group) => {
         const titles = parts
           .filter((part) => SCRIPT_PARTS[part].group === group.id && !SCRIPT_PARTS[part].continued)
-          .map((part) => SCRIPT_PARTS[part].title);
+          .map((part) => formatPartTitle(part, labels));
         if (!titles.length) return null;
         return (
           <View key={group.id} wrap={false}>
@@ -119,20 +120,23 @@ const ScriptDocument = ({ model }) => {
   const isIncluded = (part) => part !== 14 || model.feedback.enabled;
   const pages = PAGE_LAYOUT.map((page) => page.filter(isIncluded)).filter((page) => page.length);
   const parts = pages.flat();
+  const labels = buildPartLabels(parts);
 
   return (
-    <Document title={model.admin.names[0].value} author="Virtual Clinical Center">
-      <CoverPage model={model} />
-      <ContentsPage parts={parts} />
-      {pages.map((page) => (
-        <Page key={page.join("-")} size="LETTER" style={styles.page}>
-          {page.map((part) => {
-            const PartComponent = PART_COMPONENTS[part];
-            return <PartComponent key={part} model={model} />;
-          })}
-        </Page>
-      ))}
-    </Document>
+    <PartLabelsContext.Provider value={labels}>
+      <Document title={model.admin.names[0].value} author="Virtual Clinical Center">
+        <CoverPage model={model} />
+        <ContentsPage parts={parts} labels={labels} />
+        {pages.map((page) => (
+          <Page key={page.join("-")} size="LETTER" style={styles.page}>
+            {page.map((part) => {
+              const PartComponent = PART_COMPONENTS[part];
+              return <PartComponent key={part} model={model} />;
+            })}
+          </Page>
+        ))}
+      </Document>
+    </PartLabelsContext.Provider>
   );
 };
 
