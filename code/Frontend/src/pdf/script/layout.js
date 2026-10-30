@@ -7,7 +7,11 @@ export const SCRIPT_PARTS = {
   3: { name: "Door Note & Learner Instruction", group: "admin" },
   4: { name: "VCC Items", group: "admin" },
   5: { name: "Character Portrayal Overview", group: "sp" },
-  5.2: { name: "Character Portrayal Overview Continued", group: "sp", continued: true },
+  5.2: {
+    name: "Character Portrayal Overview Continued",
+    group: "sp",
+    continued: true,
+  },
   6: { name: "Gender Identity", group: "sp" },
   7: { name: "Presentation and Resulting Behaviors", group: "sp" },
   8: { name: "Chief Concern & HPI", group: "sp" },
@@ -20,7 +24,7 @@ export const SCRIPT_PARTS = {
   13: { name: "Other SP Notes", group: "sp" },
   // Only included when SP feedback is enabled on the script.
   14: { name: "SP Feedback", group: "other" },
-  15: { name: "Admin Notes", group: "other" },
+  15: { name: "Admin Notes", group: "admin" },
 };
 
 export const TOC_GROUPS = [
@@ -31,8 +35,16 @@ export const TOC_GROUPS = [
 
 // Which TOC groups each exported version of the script includes.
 export const AUDIENCES = {
-  master: { label: "Master", groups: ["admin", "sp", "other"], fileSuffix: "Master" },
-  faculty: { label: "Faculty", groups: ["admin", "other"], fileSuffix: "Faculty" },
+  master: {
+    label: "Master",
+    groups: ["admin", "sp", "other"],
+    fileSuffix: "Master",
+  },
+  faculty: {
+    label: "Faculty",
+    groups: ["admin", "other"],
+    fileSuffix: "Faculty",
+  },
   sp: { label: "SP", groups: ["sp"], fileSuffix: "SP" },
 };
 
