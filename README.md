@@ -80,13 +80,7 @@ Go 1.25.1 is required only when building or running the backend outside Docker. 
 
    The Vite development server proxies `/api` requests to `http://localhost:8080`.
 
-For a Windows convenience command that opens both services in separate PowerShell windows, run this from the repository root instead:
-
-```powershell
-.\start-dev.ps1
-```
-
-Use `.\start-dev.ps1 -NoBuild` on subsequent runs when the backend image does not need to be rebuilt. Stop the Docker services with `Ctrl+C` in the Docker terminal and stop the Vite server with `Ctrl+C` in its terminal.
+Run the Docker services and Vite frontend in separate terminals. Stop each process with `Ctrl+C` in its respective terminal.
 
 #### Authentication and local development options
 
