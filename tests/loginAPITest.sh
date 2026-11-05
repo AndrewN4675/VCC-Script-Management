@@ -161,10 +161,60 @@ run_test "Garbage token" 401 GET /api/user "" "Bearer not.a.real.token"
 
 run_test "Wrong auth scheme" 401 GET /api/user "" "Basic $token"
 
+# ── Admin: list, approve, deny access requests ────────────────────────────────
+
+SAM_EMAIL="sam.$RUN_ID@example.com"
+
+run_test "List requests without token" 401 GET /api/admin/requests
+
+run_test "List pending requests as admin" 200 GET /api/admin/requests "" "Bearer $token"
+id_for() { echo "$body" | grep -o "{[^}]*\"$1\"[^}]*}" | grep -o '"id":[0-9]*' | cut -d: -f2; }
+pat_id=$(id_for "$NEW_EMAIL")
+sam_id=$(id_for "$SAM_EMAIL")
+check "Both of this run's requests are listed" \
+    "$([ -n "$pat_id" ] && [ -n "$sam_id" ] && echo true)"
+check "Admin is not listed as pending" \
+    "$(echo "$body" | grep -q "\"$ADMIN_EMAIL\"" || echo true)"
+
+run_test "Approve without token" 401 POST "/api/admin/requests/$pat_id/approve" \
+    '{"role":"requester"}'
+
+run_test "Approve with invalid role" 400 POST "/api/admin/requests/$pat_id/approve" \
+    '{"role":"superuser"}' "Bearer $token"
+
+run_test "Approve unknown id" 404 POST /api/admin/requests/999999/approve \
+    '{"role":"requester"}' "Bearer $token"
+
+run_test "Approve non-numeric id" 400 POST /api/admin/requests/abc/approve \
+    '{"role":"requester"}' "Bearer $token"
+
+run_test "Approve pending user as script viewer" 204 POST "/api/admin/requests/$pat_id/approve" \
+    '{"role":"script viewer"}' "Bearer $token"
+
+run_test "Approve same user again" 409 POST "/api/admin/requests/$pat_id/approve" \
+    '{"role":"admin"}' "Bearer $token"
+
+run_test "Deny already-approved user" 409 POST "/api/admin/requests/$pat_id/deny" "" "Bearer $token"
+
+run_test "Deny pending user" 204 POST "/api/admin/requests/$sam_id/deny" "" "Bearer $token"
+
+run_test "Deny same user again" 409 POST "/api/admin/requests/$sam_id/deny" "" "Bearer $token"
+
+run_test "Approve denied user" 409 POST "/api/admin/requests/$sam_id/approve" \
+    '{"role":"requester"}' "Bearer $token"
+
+run_test "List after approve/deny" 200 GET /api/admin/requests "" "Bearer $token"
+check "Approved and denied users are no longer pending" \
+    "$([ -z "$(id_for "$NEW_EMAIL")" ] && [ -z "$(id_for "$SAM_EMAIL")" ] && echo true)"
+
+run_test "Approved user still cannot log in (no password yet)" 401 POST /api/auth/login \
+    "{\"email\":\"$NEW_EMAIL\",\"password\":\"\"}"
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 
 echo "────────────────────────────────────────────"
 echo -e "Results: ${GREEN}$pass passed${NC}, ${RED}$fail failed${NC}"
 echo ""
-echo "Check the server console: exactly two 'New access request' emails should"
-echo "have been logged this run ($NEW_EMAIL and sam.$RUN_ID@example.com)."
+echo "Check the server console for this run:"
+echo "  - two 'New access request' emails ($NEW_EMAIL and $SAM_EMAIL)"
+echo "  - one 'Set your password' email to $NEW_EMAIL with a /set-password?token=... link"

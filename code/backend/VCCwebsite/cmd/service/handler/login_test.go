@@ -36,14 +36,14 @@ func TestLoginReturnsVerifiableToken(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatal(err)
 	}
-	claims, err := am.VerifyToken(resp.Token)
+	userID, err := am.VerifyToken(resp.Token)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var adminID int64
 	auth.DB.QueryRow(`SELECT id FROM users WHERE email = 'admin@example.com'`).Scan(&adminID)
-	if claims.UserID != adminID || claims.Role != "admin" {
-		t.Errorf("claims = %+v, want id %d role admin", claims, adminID)
+	if userID != adminID {
+		t.Errorf("token user id = %d, want %d", userID, adminID)
 	}
 }
 

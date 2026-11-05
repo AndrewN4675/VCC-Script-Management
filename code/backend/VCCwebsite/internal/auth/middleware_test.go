@@ -42,12 +42,19 @@ func TestIssueAndVerifyToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	claims, err := am.VerifyToken(tok)
+	id, err := am.VerifyToken(tok)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if claims.UserID != 42 || claims.Role != "script editor" {
-		t.Errorf("got %+v", claims)
+	if id != 42 {
+		t.Errorf("user id = %d, want 42", id)
+	}
+
+	noRole := signRaw(t, jwt.SigningMethodHS256, testSecret, jwtClaims{RegisteredClaims: jwt.RegisteredClaims{
+		Subject: "42", ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+	}})
+	if id, err := am.VerifyToken(noRole); err != nil || id != 42 {
+		t.Errorf("token without role claim: id=%d err=%v; only the user id is needed", id, err)
 	}
 
 	var raw jwtClaims
@@ -76,8 +83,6 @@ func TestVerifyTokenRejects(t *testing.T) {
 			jwtClaims{Role: "admin", RegisteredClaims: jwt.RegisteredClaims{Subject: "1"}}),
 		"non-numeric subject": signRaw(t, jwt.SigningMethodHS256, testSecret,
 			jwtClaims{Role: "admin", RegisteredClaims: jwt.RegisteredClaims{Subject: "bob", ExpiresAt: jwt.NewNumericDate(future)}}),
-		"missing role": signRaw(t, jwt.SigningMethodHS256, testSecret,
-			jwtClaims{RegisteredClaims: jwt.RegisteredClaims{Subject: "1", ExpiresAt: jwt.NewNumericDate(future)}}),
 		"garbage": "not.a.token",
 	}
 	for name, tok := range cases {
@@ -97,18 +102,31 @@ func serve(h http.Handler, authHeader string) *httptest.ResponseRecorder {
 	return rec
 }
 
+// activeUser inserts an active user with the given role and returns its id.
+func activeUser(t *testing.T, email, role string) int64 {
+	t.Helper()
+	res, err := DB.Exec(`INSERT INTO users (name, email, password_hash, role, status) VALUES ('U', ?, 'x', ?, 'active')`, email, role)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, _ := res.LastInsertId()
+	return id
+}
+
 func TestMiddleware(t *testing.T) {
+	setupDB(t)
 	am := newTestMiddleware(t)
 	var got *Claims
 	h := am.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		got, _ = GetClaimsFromContext(r.Context())
 	}))
 
-	tok, _ := am.IssueToken(7, "requester")
+	id := activeUser(t, "req@example.com", "requester")
+	tok, _ := am.IssueToken(id, "requester")
 	if rec := serve(h, "Bearer "+tok); rec.Code != http.StatusOK {
 		t.Fatalf("valid token: status = %d", rec.Code)
 	}
-	if got == nil || got.UserID != 7 || got.Role != "requester" {
+	if got == nil || got.UserID != id || got.Role != "requester" {
 		t.Errorf("claims in context = %+v", got)
 	}
 
@@ -125,7 +143,46 @@ func TestMiddleware(t *testing.T) {
 	}
 }
 
+func TestMiddlewareUsesDatabaseNotTokenRole(t *testing.T) {
+	setupDB(t)
+	am := newTestMiddleware(t)
+	var got *Claims
+	h := am.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got, _ = GetClaimsFromContext(r.Context())
+	}))
+
+	viewer := activeUser(t, "viewer@example.com", "script viewer")
+	claimsAdmin, _ := am.IssueToken(viewer, "admin")
+	if rec := serve(h, "Bearer "+claimsAdmin); rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	if got.Role != "script viewer" {
+		t.Errorf("role in context = %q, want database role 'script viewer'", got.Role)
+	}
+	if rec := serve(am.Middleware(RequireAdmin(h)), "Bearer "+claimsAdmin); rec.Code != http.StatusForbidden {
+		t.Errorf("token claiming admin for a viewer: status = %d, want 403", rec.Code)
+	}
+
+	unknown, _ := am.IssueToken(9999, "admin")
+	if rec := serve(h, "Bearer "+unknown); rec.Code != http.StatusUnauthorized {
+		t.Errorf("token for nonexistent user: status = %d, want 401", rec.Code)
+	}
+
+	for _, status := range []string{"pending", "approved", "denied"} {
+		res, err := DB.Exec(`INSERT INTO users (name, email, role, status) VALUES ('U', ?, 'admin', ?)`, status+"@example.com", status)
+		if err != nil {
+			t.Fatal(err)
+		}
+		id, _ := res.LastInsertId()
+		tok, _ := am.IssueToken(id, "admin")
+		if rec := serve(h, "Bearer "+tok); rec.Code != http.StatusUnauthorized {
+			t.Errorf("%s user: status = %d, want 401", status, rec.Code)
+		}
+	}
+}
+
 func TestRequireAdmin(t *testing.T) {
+	setupDB(t)
 	am := newTestMiddleware(t)
 	ok := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
 	protected := am.Middleware(RequireAdmin(ok))
@@ -136,7 +193,8 @@ func TestRequireAdmin(t *testing.T) {
 		"script viewer": http.StatusForbidden,
 		"requester":     http.StatusForbidden,
 	} {
-		tok, _ := am.IssueToken(1, role)
+		id := activeUser(t, role+"@example.com", role)
+		tok, _ := am.IssueToken(id, role)
 		if rec := serve(protected, "Bearer "+tok); rec.Code != want {
 			t.Errorf("role %q: status = %d, want %d", role, rec.Code, want)
 		}

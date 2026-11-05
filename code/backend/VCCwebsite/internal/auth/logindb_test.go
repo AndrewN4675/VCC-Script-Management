@@ -132,6 +132,30 @@ func TestCreateAdmin(t *testing.T) {
 	}
 }
 
+func TestActiveUserRole(t *testing.T) {
+	setupDB(t)
+	if err := CreateAdmin("Admin", "admin@example.com", "pw"); err != nil {
+		t.Fatal(err)
+	}
+	var id int64
+	DB.QueryRow(`SELECT id FROM users WHERE email = 'admin@example.com'`).Scan(&id)
+
+	if role, err := ActiveUserRole(id); err != nil || role != "admin" {
+		t.Errorf("active admin: role=%q err=%v", role, err)
+	}
+	DB.Exec(`UPDATE users SET role = 'script viewer' WHERE id = ?`, id)
+	if role, _ := ActiveUserRole(id); role != "script viewer" {
+		t.Errorf("after demotion: role=%q", role)
+	}
+	DB.Exec(`UPDATE users SET status = 'denied' WHERE id = ?`, id)
+	if _, err := ActiveUserRole(id); err != ErrUserNotFound {
+		t.Errorf("denied user: err=%v, want ErrUserNotFound", err)
+	}
+	if _, err := ActiveUserRole(9999); err != ErrUserNotFound {
+		t.Errorf("unknown user: err=%v, want ErrUserNotFound", err)
+	}
+}
+
 func TestAuthenticate(t *testing.T) {
 	setupDB(t)
 	if err := CreateAdmin("Admin", "admin@example.com", "s3cret"); err != nil {
