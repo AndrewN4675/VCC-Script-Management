@@ -78,7 +78,8 @@ func main() {
 		return h
 	}
 
-	mux.HandleFunc("/api/login", handler.Login(authMiddleware, jwtSecret))
+	mux.HandleFunc("/api/auth/login", handler.Login(authMiddleware))
+	mux.HandleFunc("/api/access-requests", handler.AccessRequests(auth.LogMailer{}))
 	mux.HandleFunc("/api/health", handler.Health(mongoClient, authMiddleware))
 
 	mux.Handle("/api/script-request", protect(api.ScriptRequestHandler(mongoClient)))
