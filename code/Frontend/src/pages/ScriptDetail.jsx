@@ -5,6 +5,7 @@ import Modal from "../components/Modal";
 import { useToast } from "../components/Toast";
 import { downloadResourcePdf, downloadMedicationCardPdf, downloadLabDataCardPdf } from "../utils/pdf";
 import { downloadScriptPdf, previewScriptPdf } from "../pdf/script";
+import ScriptPdfMenu from "../components/ScriptPdfMenu";
 import {
   collapseDoorNoteArtifacts,
   getArtifactBadge,
@@ -842,15 +843,15 @@ const ScriptDetail = ({ requestInlineOnly = false }) => {
   };
 
   // handles preview script pdf
-  const handlePreviewPdf = () => {
-    previewScriptPdf(activeItem, current).catch((err) => {
+  const handlePreviewPdf = (audience) => {
+    previewScriptPdf(activeItem, current, audience).catch((err) => {
       toast.show(err?.message || "Failed to generate PDF.", { type: "error" });
     });
   };
 
   // handles download script pdf
-  const handleDownloadPdf = () => {
-    downloadScriptPdf(activeItem, current).catch((err) => {
+  const handleDownloadPdf = (audience) => {
+    downloadScriptPdf(activeItem, current, audience).catch((err) => {
       toast.show(err?.message || "Failed to generate PDF.", { type: "error" });
     });
   };
@@ -1616,8 +1617,8 @@ const ScriptDetail = ({ requestInlineOnly = false }) => {
           </button>
         ) : null}
         <button className="rounded border px-3 py-1 hover:bg-gray-50" onClick={() => setArtifactsOpen(true)}>Resources</button>
-        <button className="rounded border px-3 py-1 hover:bg-gray-50" onClick={handlePreviewPdf}>Preview PDF</button>
-        <button className="rounded border px-3 py-1 hover:bg-gray-50" onClick={handleDownloadPdf}>Download PDF</button>
+        <ScriptPdfMenu label="Preview PDF" className="rounded border px-3 py-1 group-hover:bg-gray-50" onSelect={handlePreviewPdf} />
+        <ScriptPdfMenu label="Download PDF" className="rounded border px-3 py-1 group-hover:bg-gray-50" onSelect={handleDownloadPdf} />
       </div>
     </div>
   );

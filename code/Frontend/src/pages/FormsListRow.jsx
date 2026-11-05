@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { downloadScriptPdf, previewScriptPdf } from "../pdf/script";
+import ScriptPdfMenu from "../components/ScriptPdfMenu";
 import { formatTitleWithDobAge } from "../utils/patientAge";
 
 // handles pick first text
@@ -62,14 +63,14 @@ const FormsListRow = ({ item, onArtifacts, onPropose, onDelete, onSendBackToRequ
   const meta = [patient, department, createdAt].filter(Boolean).join(" | ");
 
   // handles handle download
-  const handleDownload = () => {
-    downloadScriptPdf(item, currentVersion || undefined).catch((err) => {
+  const handleDownload = (audience) => {
+    downloadScriptPdf(item, currentVersion || undefined, audience).catch((err) => {
       console.warn("Failed to download script PDF", err);
     });
   };
   // handles handle preview
-  const handlePreview = () => {
-    previewScriptPdf(item, currentVersion || undefined).catch((err) => {
+  const handlePreview = (audience) => {
+    previewScriptPdf(item, currentVersion || undefined, audience).catch((err) => {
       console.warn("Failed to preview script PDF", err);
     });
   };
@@ -97,8 +98,8 @@ const FormsListRow = ({ item, onArtifacts, onPropose, onDelete, onSendBackToRequ
         </div>
         <div className="list-row__buttons flex flex-wrap gap-2 md:justify-end">
           <Link to={`/forms/${encodeURIComponent(item.id)}`} state={{ from }}>View</Link>
-          <button onClick={handlePreview}>Preview</button>
-          <button onClick={handleDownload}>Download</button>
+          <ScriptPdfMenu label="Preview" onSelect={handlePreview} />
+          <ScriptPdfMenu label="Download" onSelect={handleDownload} />
           {onClone ? <button onClick={() => onClone(item)}>Clone</button> : null}
           {onDelete || onSendBackToRequests ? (
             <div className="relative" ref={manageMenuRef}>
