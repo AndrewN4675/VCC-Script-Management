@@ -70,6 +70,17 @@ func ActiveAdminEmails() ([]string, error) {
 	return emails, rows.Err()
 }
 
+// ActiveUserRole returns the current role of an active user. A missing or
+// non-active user returns ErrUserNotFound.
+func ActiveUserRole(id int64) (string, error) {
+	var role string
+	err := DB.QueryRow(`SELECT role FROM users WHERE id = ? AND status = 'active'`, id).Scan(&role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrUserNotFound
+	}
+	return role, err
+}
+
 var ErrInvalidCredentials = errors.New("invalid email or password")
 
 // Authenticate checks the password of an active user. Any mismatch, unknown

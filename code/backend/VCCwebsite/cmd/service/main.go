@@ -69,9 +69,16 @@ func main() {
 
 	protect := authMiddleware.Middleware
 
+	appURL := os.Getenv("APP_URL")
+	if appURL == "" {
+		appURL = "http://localhost:8080"
+	}
+	mailer := auth.LogMailer{}
+
 	mux.HandleFunc("/api/auth/login", handler.Login(authMiddleware))
-	mux.HandleFunc("/api/access-requests", handler.AccessRequests(auth.LogMailer{}))
+	mux.HandleFunc("/api/access-requests", handler.AccessRequests(mailer))
 	mux.HandleFunc("/api/health", handler.Health(mongoClient))
+	handler.RegisterAdminRoutes(mux, authMiddleware, mailer, appURL)
 
 	mux.Handle("/api/script-request", protect(api.ScriptRequestHandler(mongoClient)))
 	mux.Handle("/api/document/versions", protect(api.DocumentHandler(mongoClient)))
