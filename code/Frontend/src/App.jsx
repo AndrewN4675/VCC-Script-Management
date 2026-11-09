@@ -11,6 +11,9 @@ import RequestNew from "./pages/RequestNew";
 import CreateScript from "./pages/CreateScript";
 import ScriptDetail from "./pages/ScriptDetail";
 import ActorDatabase from "./pages/ActorDatabase";
+import RequestAccess from "./pages/RequestAccess";
+import SetPassword from "./pages/SetPassword";
+import AdminRequests from "./pages/AdminRequests";
 import { StoreProvider } from "./store";
 import { ToastProvider } from "./components/Toast";
 import RequireAuth from "./components/RequireAuth";
@@ -31,6 +34,16 @@ const AppRoutes = () => (
         }
       />
       <Route path="login" element={<Login />} />
+      <Route path="request-access" element={<RequestAccess />} />
+      <Route path="set-password" element={<SetPassword />} />
+      <Route
+        path="admin/requests"
+        element={
+          <RequireAuth requiredRole="admin" redirectTo="/">
+            <AdminRequests />
+          </RequireAuth>
+        }
+      />
       <Route
         path="dashboard"
         element={
@@ -122,6 +135,8 @@ const AppRoutes = () => (
     </Route>
   </Routes>
 );
+
+export { AppRoutes };
 
 // handles app
 const App = () => (

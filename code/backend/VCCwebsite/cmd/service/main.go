@@ -76,6 +76,7 @@ func main() {
 	mailer := auth.LogMailer{}
 
 	mux.HandleFunc("/api/auth/login", handler.Login(authMiddleware))
+	mux.HandleFunc("/api/auth/setup-password", handler.SetupPassword())
 	mux.HandleFunc("/api/access-requests", handler.AccessRequests(mailer))
 	mux.HandleFunc("/api/health", handler.Health(mongoClient))
 	handler.RegisterAdminRoutes(mux, authMiddleware, mailer, appURL)

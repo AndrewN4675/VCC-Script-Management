@@ -210,6 +210,29 @@ check "Approved and denied users are no longer pending" \
 run_test "Approved user still cannot log in (no password yet)" 401 POST /api/auth/login \
     "{\"email\":\"$NEW_EMAIL\",\"password\":\"\"}"
 
+# ── POST /api/auth/setup-password ─────────────────────────────────────────────
+# The raw token only appears in the server console, so the happy path is
+# covered by the Go tests; these check the rejections.
+
+run_test "Setup with unknown token" 400 POST /api/auth/setup-password \
+    '{"token":"not-a-real-token","password":"correct horse battery"}'
+unknown_token_body="$body"
+
+run_test "Setup with empty token" 400 POST /api/auth/setup-password \
+    '{"token":"","password":"correct horse battery"}'
+check "Empty and unknown tokens get the same message" \
+    "$([ "$body" = "$unknown_token_body" ] && echo true)"
+
+run_test "Setup with 11-character password" 400 POST /api/auth/setup-password \
+    '{"token":"not-a-real-token","password":"elevenchars"}'
+
+run_test "Setup with 73-byte password" 400 POST /api/auth/setup-password \
+    "{\"token\":\"not-a-real-token\",\"password\":\"$(printf 'x%.0s' {1..73})\"}"
+
+run_test "Setup with malformed JSON" 400 POST /api/auth/setup-password 'not json at all'
+
+run_test "Setup GET not allowed" 405 GET /api/auth/setup-password
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 
 echo "────────────────────────────────────────────"

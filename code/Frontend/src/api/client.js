@@ -1,14 +1,7 @@
 // Shared frontend api utility file, backend requests kept here, calls helper methods instead of raw fetches, handles request setup automatically
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { getToken } from '../auth/session';
 
-// handles get token
-const getToken = () => {
-  try {
-    return localStorage.getItem('token');
-  } catch {
-    return null;
-  }
-};
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function request(path, { method = 'GET', body, headers } = {}) {
   const url = `${API_BASE}${path}`;
@@ -43,9 +36,28 @@ export const api = {
   // Health check
   health: () => request('/health'),
 
-  // Auth APIs (if you add authentication later)
+  // Auth APIs
   login: (email, password) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
+
+  // handles request access
+  requestAccess: (name, email) =>
+    request('/access-requests', { method: 'POST', body: { name, email } }),
+
+  // handles setup password
+  setupPassword: (token, password) =>
+    request('/auth/setup-password', { method: 'POST', body: { token, password } }),
+
+  // Admin access-request APIs (the server rejects non-admins)
+  listAccessRequests: () => request('/admin/requests'),
+
+  // handles approve access request
+  approveAccessRequest: (id, role) =>
+    request(`/admin/requests/${encodeURIComponent(id)}/approve`, { method: 'POST', body: { role } }),
+
+  // handles deny access request
+  denyAccessRequest: (id) =>
+    request(`/admin/requests/${encodeURIComponent(id)}/deny`, { method: 'POST' }),
 
   // Current user info
   getCurrentUser: () => request('/user'),

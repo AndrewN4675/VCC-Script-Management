@@ -19,6 +19,8 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrNotPending   = errors.New("user is not pending")
 	ErrInvalidRole  = errors.New("invalid role")
+
+	ErrInvalidSetupToken = errors.New("invalid or expired setup link")
 )
 
 func ValidRole(role string) bool {
@@ -106,6 +108,35 @@ func RevertApproval(id int64, token string) error {
 		id, HashSetupToken(token),
 	)
 	return err
+}
+
+// SetupPassword sets the password of the approved user holding an unexpired
+// token and makes them active. The token is cleared in the same update, so it
+// works only once even under concurrent use. An unknown, used or expired token
+// returns ErrInvalidSetupToken; an invalid password is rejected before the
+// token is touched.
+func SetupPassword(token, password string) error {
+	if err := ValidatePassword(password); err != nil {
+		return err
+	}
+	hash, err := HashPassword(password)
+	if err != nil {
+		return err
+	}
+	res, err := DB.Exec(
+		`UPDATE users SET password_hash = ?, status = 'active', setup_token_hash = NULL, setup_token_expires_at = NULL
+		 WHERE setup_token_hash = ? AND status = 'approved' AND setup_token_expires_at > ?`,
+		hash, HashSetupToken(token), time.Now().UTC().Format(sqliteTime),
+	)
+	if err != nil {
+		return err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return err
+	} else if n == 0 {
+		return ErrInvalidSetupToken
+	}
+	return nil
 }
 
 func DenyRequest(id int64) error {

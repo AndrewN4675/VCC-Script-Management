@@ -1,10 +1,34 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
 	"sync"
+	"unicode/utf8"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+const (
+	MinPasswordLength = 12
+	// bcrypt rejects input longer than 72 bytes.
+	maxPasswordBytes = 72
+)
+
+var (
+	ErrPasswordTooShort = fmt.Errorf("password must be at least %d characters", MinPasswordLength)
+	ErrPasswordTooLong  = errors.New("password must be at most 72 bytes")
+)
+
+func ValidatePassword(password string) error {
+	if utf8.RuneCountInString(password) < MinPasswordLength {
+		return ErrPasswordTooShort
+	}
+	if len(password) > maxPasswordBytes {
+		return ErrPasswordTooLong
+	}
+	return nil
+}
 
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
