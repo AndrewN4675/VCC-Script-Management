@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
-const MIN_PASSWORD_LENGTH = 12;
+const MIN_PASSWORD_LENGTH = 8;
 
 // Read once at first render, before the effect below strips it from the URL.
 const readTokenFromUrl = () => new URLSearchParams(window.location.search).get("token") || "";

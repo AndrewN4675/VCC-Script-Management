@@ -87,8 +87,8 @@ func TestSetupPasswordValidation(t *testing.T) {
 		body     string
 		wantText string
 	}{
-		"11-char password": {setupBody(token, "elevenchars"), "at least 12"},
-		"empty password":   {setupBody(token, ""), "at least 12"},
+		"7-char password":  {setupBody(token, "sevench"), "at least 8"},
+		"empty password":   {setupBody(token, ""), "at least 8"},
 		"73-byte password": {setupBody(token, strings.Repeat("x", 73)), "at most 72"},
 		"bad json":         {`{`, "bad request"},
 	} {

@@ -223,8 +223,8 @@ run_test "Setup with empty token" 400 POST /api/auth/setup-password \
 check "Empty and unknown tokens get the same message" \
     "$([ "$body" = "$unknown_token_body" ] && echo true)"
 
-run_test "Setup with 11-character password" 400 POST /api/auth/setup-password \
-    '{"token":"not-a-real-token","password":"elevenchars"}'
+run_test "Setup with 7-character password" 400 POST /api/auth/setup-password \
+    '{"token":"not-a-real-token","password":"sevench"}'
 
 run_test "Setup with 73-byte password" 400 POST /api/auth/setup-password \
     "{\"token\":\"not-a-real-token\",\"password\":\"$(printf 'x%.0s' {1..73})\"}"

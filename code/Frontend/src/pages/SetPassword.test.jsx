@@ -62,9 +62,9 @@ describe("Set Password page", () => {
     expect(screen.getByRole("button", { name: "Set Password" })).toBeEnabled();
   });
 
-  it("asks for at least 12 characters", () => {
+  it("asks for at least 8 characters", () => {
     renderAt("/set-password?token=t");
-    expect(screen.getByLabelText("New password")).toHaveAttribute("minLength", "12");
+    expect(screen.getByLabelText("New password")).toHaveAttribute("minLength", "8");
   });
 
   it("explains when the link has no token", () => {

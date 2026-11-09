@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MinPasswordLength = 12
+	MinPasswordLength = 8
 	// bcrypt rejects input longer than 72 bytes.
 	maxPasswordBytes = 72
 )

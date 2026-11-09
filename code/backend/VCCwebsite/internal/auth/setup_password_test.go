@@ -25,14 +25,14 @@ func TestValidatePassword(t *testing.T) {
 		password string
 		want     error
 	}{
-		"11 chars":           {strings.Repeat("a", 11), ErrPasswordTooShort},
-		"empty":              {"", ErrPasswordTooShort},
-		"12 chars":           {strings.Repeat("a", 12), nil},
-		"72 bytes":           {strings.Repeat("a", 72), nil},
-		"73 bytes":           {strings.Repeat("a", 73), ErrPasswordTooLong},
-		"12 multibyte chars": {strings.Repeat("é", 12), nil},
-		"11 multibyte chars": {strings.Repeat("é", 11), ErrPasswordTooShort},
-		"37 two-byte chars":  {strings.Repeat("é", 37), ErrPasswordTooLong},
+		"7 chars":           {strings.Repeat("a", 7), ErrPasswordTooShort},
+		"empty":             {"", ErrPasswordTooShort},
+		"8 chars":           {strings.Repeat("a", 8), nil},
+		"72 bytes":          {strings.Repeat("a", 72), nil},
+		"73 bytes":          {strings.Repeat("a", 73), ErrPasswordTooLong},
+		"8 multibyte chars": {strings.Repeat("é", 8), nil},
+		"7 multibyte chars": {strings.Repeat("é", 7), ErrPasswordTooShort},
+		"37 two-byte chars": {strings.Repeat("é", 37), ErrPasswordTooLong},
 	}
 	for name, c := range cases {
 		if err := ValidatePassword(c.password); err != c.want {
@@ -154,8 +154,8 @@ func TestSetupPasswordBadPasswordKeepsToken(t *testing.T) {
 	setupDB(t)
 	id, token := approvedUser(t, "pat@example.com")
 
-	if err := SetupPassword(token, "elevenchars"); err != ErrPasswordTooShort {
-		t.Errorf("11-char password: err = %v, want ErrPasswordTooShort", err)
+	if err := SetupPassword(token, "sevench"); err != ErrPasswordTooShort {
+		t.Errorf("7-char password: err = %v, want ErrPasswordTooShort", err)
 	}
 	if err := SetupPassword(token, strings.Repeat("x", 73)); err != ErrPasswordTooLong {
 		t.Errorf("73-byte password: err = %v, want ErrPasswordTooLong", err)
