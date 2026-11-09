@@ -32,7 +32,6 @@ Go 1.25.1 is required only when building or running the backend outside Docker. 
 - **SQLite:** Stores actor information and ships with the included actor database.
 - **Go REST API:** Provides backend authentication, document, request, artifact, and actor endpoints.
 - **React, Vite, and Tailwind CSS:** Provide the frontend development and production UI.
-- **Okta OAuth:** Provides optional organization authentication when Okta variables are configured.
 - **JWT authentication:** Supports authenticated API requests and local login flows.
 - **Local mock store:** Allows frontend work without a running backend when `VITE_USE_MOCK=true`.
 
@@ -51,7 +50,7 @@ Go 1.25.1 is required only when building or running the backend outside Docker. 
    docker compose -f Docker/docker-compose.yml up --build mongodb backend
    ```
 
-   Docker Compose uses development defaults, so a `.env` file is not required. The backend is available at `http://localhost:8080`. The container initializes MongoDB and includes the SQLite actor database shipped in the repository; there is no separate seed command.
+   The backend refuses to start without `JWT_SECRET`. Copy `.env.example` to `.env` in the repository root and set `JWT_SECRET` (the file explains how to generate one); the other settings have development defaults. The backend is available at `http://localhost:8080`. The container initializes MongoDB and includes the SQLite actor database shipped in the repository; there is no separate seed command.
 
 3. In a second terminal, install and start the active frontend:
 
@@ -84,8 +83,7 @@ Run the Docker services and Vite frontend in separate terminals. Stop each proce
 
 #### Authentication and local development options
 
-- The copied `.env.local` enables the configured Okta mode. A valid Okta client configuration is required to complete organization login.
-- To use the local login page and its `Skip Login` and `Admin` options, remove the `VITE_OKTA_ISSUER` and `VITE_OKTA_CLIENT_ID` settings from `.env.local`.
+- Login uses email and password against the backend. Okta is disabled (see "Okta (disabled)" below).
 - To run the frontend without the backend, set `VITE_USE_MOCK=true` in `.env.local`, then run `npm run dev`.
 - The active frontend is `code/Frontend`. The root-level `Frontend` directory is legacy and should not be used for development.
 
@@ -93,7 +91,7 @@ Run the Docker services and Vite frontend in separate terminals. Stop each proce
 
 After installation, the main workflow is:
 
-1. Sign in through Okta or use the local development login option.
+1. Sign in with your email and password.
 2. Use the dashboard to open the script library and search available standardized patient scripts.
 3. Open a script to review its details, versions, medications, vitals, and related artifacts.
 4. Create or submit a script request, then track its status from the request pages.
@@ -109,6 +107,20 @@ npm run build
 npm run lint
 npm run preview
 ```
+
+## Okta (disabled)
+
+Okta sign-in is turned off and removed from the active code. The Okta pieces are kept for reference:
+
+- `code/Frontend/src/oktaConfig.js` is unused and left in place.
+- The Okta variables in `Docker/docker-compose.yml` and `code/Frontend/.env.example` are commented out.
+- The `@okta/*` npm packages and the Okta Go dependency are still installed.
+
+The full working Okta version is at the git tag `okta-reference`. To restore it:
+
+1. Inspect it with `git show okta-reference:code/Frontend/src/App.jsx` (or check out the tag in a separate worktree: `git worktree add ../vcc-okta okta-reference`).
+2. Restore the Okta changes in `App.jsx`, `pages/Login.jsx`, `pages/Layout.jsx`, `components/RequireAuth.jsx` and `api/client.js`, for example `git checkout okta-reference -- <file>` for each, then reapply any auth changes made since.
+3. Uncomment the Okta variables in `code/Frontend/.env.example` and copy them into `.env.local`.
 
 ## Known Problems
 
