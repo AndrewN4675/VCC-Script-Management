@@ -1,6 +1,6 @@
 # Sprint 2 Report (October 11, 2026 -- November 9, 2026)
 
-## YouTube link of Sprint * Video (Make this video unlisted)
+[YouTube link of Sprint 2](https://youtu.be/OtNGZJ03JeE)
 
 ## What's New (User Facing)
 * User authentication and login page
