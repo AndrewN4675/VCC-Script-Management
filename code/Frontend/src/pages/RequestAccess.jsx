@@ -68,7 +68,7 @@ const RequestAccess = () => {
       )}
       <p className="mt-6 text-sm text-gray-600">
         Already have an account?{" "}
-        <Link to="/login" className="text-[#981e32] hover:underline">
+        <Link to="/login" className="text-[#981e32] underline hover:no-underline">
           Log in
         </Link>
       </p>

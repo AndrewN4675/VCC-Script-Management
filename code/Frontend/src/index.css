@@ -32,8 +32,11 @@ body {
   min-height: 100vh;
 }
 
-a {
-  text-decoration: none;
+/* In the base layer so Tailwind utilities (e.g. `underline`) can override it. */
+@layer base {
+  a {
+    text-decoration: none;
+  }
 }
 
 button {
