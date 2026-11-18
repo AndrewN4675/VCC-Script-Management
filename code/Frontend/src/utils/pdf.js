@@ -3,7 +3,8 @@ import hpiDiagramDataUrl from "../assets/hpi-diagram.png?inline";
 import { formatDobWithAge } from "./patientAge";
 
 // handles get
-const get = (obj, path, fallback = "") => path.reduce((acc, k) => (acc ? acc[k] : undefined), obj) ?? fallback;
+const get = (obj, path, fallback = "") =>
+  path.reduce((acc, k) => (acc ? acc[k] : undefined), obj) ?? fallback;
 // handles pad
 const pad = (s) => (s === 0 ? "0" : s ? String(s) : "");
 const COLORS = {
@@ -57,7 +58,10 @@ export function downloadResourcePdf(item, resourceName) {
     doc.text(`${label}:`, margin, y);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(COLORS.body);
-    const lines = doc.splitTextToSize(String(value || ""), pageWidth - margin * 2 - VALUE_INDENT);
+    const lines = doc.splitTextToSize(
+      String(value || ""),
+      pageWidth - margin * 2 - VALUE_INDENT,
+    );
     doc.text(lines, margin + VALUE_INDENT, y + 13);
     y += lines.length * 13 + 20;
   });
@@ -77,11 +81,16 @@ function normalizeMedicationRow(entry) {
   if (!entry || typeof entry !== "object") return null;
   return {
     name: pad(entry.name || entry.brand_substance || entry.medication_name),
-    brand: pad(entry.brand || entry.generic || entry.brand_substance || entry.generic_name),
+    brand: pad(
+      entry.brand ||
+        entry.generic ||
+        entry.brand_substance ||
+        entry.generic_name,
+    ),
     dose: pad(
-      entry.dose
-      || [pad(entry.amount), pad(entry.unit)].filter(Boolean).join(" ")
-      || entry.medication_dose
+      entry.dose ||
+        [pad(entry.amount), pad(entry.unit)].filter(Boolean).join(" ") ||
+        entry.medication_dose,
     ),
     frequency: pad(entry.frequency || entry.frequency_reason || entry.schedule),
     startDate: pad(entry.startDate || entry.date_started || entry.dateStarted),
@@ -92,20 +101,29 @@ function normalizeMedicationRow(entry) {
 function normalizeNonPrescriptionRow(entry) {
   if (typeof entry === "string") {
     const text = pad(entry);
-    return text ? { name: text, brand: "", dose: "", frequency: "", startDate: "" } : null;
+    return text
+      ? { name: text, brand: "", dose: "", frequency: "", startDate: "" }
+      : null;
   }
   if (!entry || typeof entry !== "object") return null;
   if (entry.text) {
     const text = pad(entry.text);
-    return text ? { name: text, brand: "", dose: "", frequency: "", startDate: "" } : null;
+    return text
+      ? { name: text, brand: "", dose: "", frequency: "", startDate: "" }
+      : null;
   }
   return {
     name: pad(entry.name || entry.brand_substance || entry.medication_name),
-    brand: pad(entry.brand || entry.generic || entry.brand_substance || entry.generic_name),
+    brand: pad(
+      entry.brand ||
+        entry.generic ||
+        entry.brand_substance ||
+        entry.generic_name,
+    ),
     dose: pad(
-      entry.dose
-      || [pad(entry.amount), pad(entry.unit)].filter(Boolean).join(" ")
-      || entry.medication_dose
+      entry.dose ||
+        [pad(entry.amount), pad(entry.unit)].filter(Boolean).join(" ") ||
+        entry.medication_dose,
     ),
     frequency: pad(entry.frequency || entry.frequency_reason || entry.schedule),
     startDate: pad(entry.startDate || entry.date_started || entry.dateStarted),
@@ -116,14 +134,22 @@ function normalizeNonPrescriptionRow(entry) {
 function normalizeMedicationRows(rawValue) {
   return (Array.isArray(rawValue) ? rawValue : [rawValue])
     .map(normalizeMedicationRow)
-    .filter((row) => row && (row.name || row.brand || row.dose || row.frequency || row.startDate));
+    .filter(
+      (row) =>
+        row &&
+        (row.name || row.brand || row.dose || row.frequency || row.startDate),
+    );
 }
 
 // handles normalize non prescription rows
 function normalizeNonPrescriptionRows(rawValue) {
   return (Array.isArray(rawValue) ? rawValue : [rawValue])
     .map(normalizeNonPrescriptionRow)
-    .filter((row) => row && (row.name || row.brand || row.dose || row.frequency || row.startDate));
+    .filter(
+      (row) =>
+        row &&
+        (row.name || row.brand || row.dose || row.frequency || row.startDate),
+    );
 }
 
 async function fetchMedicationRowsByDocumentId(id) {
@@ -140,23 +166,28 @@ async function fetchMedicationRowsByDocumentId(id) {
   }
 }
 
-export async function downloadMedicationCardPdf(item, versionObj, resourceName = "Medication Card") {
-  const fields = versionObj?.fields || item?.versions?.[0]?.fields || item?.fields || {};
+export async function downloadMedicationCardPdf(
+  item,
+  versionObj,
+  resourceName = "Medication Card",
+) {
+  const fields =
+    versionObj?.fields || item?.versions?.[0]?.fields || item?.fields || {};
   const medHist =
-    get(fields, ["med_hist"], null)
-    || get(item, ["med_hist"], null)
-    || get(versionObj, ["med_hist"], null)
-    || {};
+    get(fields, ["med_hist"], null) ||
+    get(item, ["med_hist"], null) ||
+    get(versionObj, ["med_hist"], null) ||
+    {};
   const patientName = pad(get(fields, ["patient", "name"], "")) || "Patient";
   const patientAge = pad(get(fields, ["patient", "age"], ""));
   const fieldRows = normalizeMedicationRows(medHist?.medications || []);
   const apiRows = await fetchMedicationRowsByDocumentId(item?.id);
   const prescribedMeds = apiRows.length ? apiRows : fieldRows;
   const nonPrescriptionMeds = normalizeNonPrescriptionRows(
-    medHist?.non_prescription_medications
-    || medHist?.nonPrescriptionMedications
-    || medHist?.non_prescription
-    || []
+    medHist?.non_prescription_medications ||
+      medHist?.nonPrescriptionMedications ||
+      medHist?.non_prescription ||
+      [],
   );
 
   const doc = new jsPDF({ unit: "pt", format: "letter" });
@@ -217,9 +248,20 @@ export async function downloadMedicationCardPdf(item, versionObj, resourceName =
     }
 
     rows.forEach((row) => {
-      const values = [row.name, row.brand, row.dose, row.frequency, row.startDate].map((value) => value || "N/A");
-      const wrapped = values.map((value, idx) => doc.splitTextToSize(value, colWidths[idx] - 8));
-      const rowHeight = Math.max(24, ...wrapped.map((lines) => lines.length * lineHeight + rowPaddingY * 2));
+      const values = [
+        row.name,
+        row.brand,
+        row.dose,
+        row.frequency,
+        row.startDate,
+      ].map((value) => value || "N/A");
+      const wrapped = values.map((value, idx) =>
+        doc.splitTextToSize(value, colWidths[idx] - 8),
+      );
+      const rowHeight = Math.max(
+        24,
+        ...wrapped.map((lines) => lines.length * lineHeight + rowPaddingY * 2),
+      );
 
       ensureRowSpace(rowHeight);
 
@@ -238,7 +280,9 @@ export async function downloadMedicationCardPdf(item, versionObj, resourceName =
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(COLORS.crimsonDark);
-  doc.text(resourceName || "Medication Card", pageWidth / 2, y, { align: "center" });
+  doc.text(resourceName || "Medication Card", pageWidth / 2, y, {
+    align: "center",
+  });
   y += 24;
 
   doc.setFont("helvetica", "normal");
@@ -249,9 +293,17 @@ export async function downloadMedicationCardPdf(item, versionObj, resourceName =
   doc.text(`Patient Age: ${patientAge || "N/A"}`, margin, y);
   y += 16;
 
-  drawMedicationTable("Prescription Medications", prescribedMeds, "No prescription medications listed.");
+  drawMedicationTable(
+    "Prescription Medications",
+    prescribedMeds,
+    "No prescription medications listed.",
+  );
   y += 12;
-  drawMedicationTable("Non-prescription Medications", nonPrescriptionMeds, "No non-prescription medications listed.");
+  drawMedicationTable(
+    "Non-prescription Medications",
+    nonPrescriptionMeds,
+    "No non-prescription medications listed.",
+  );
 
   const safeName = buildMedicationCardPdfFileName(fields);
   doc.save(safeName);
@@ -307,10 +359,14 @@ function buildDerivedVitalRows(fields = {}) {
   const diastolic = toFiniteNumber(vitals?.pressure?.bottom);
   const bloodOxygen = toFiniteNumber(vitals?.blood_oxygen);
   const tempReading = toFiniteNumber(vitals?.temp?.reading);
-  const tempUnitRaw = String(vitals?.temp?.unit ?? "").trim().toLowerCase();
+  const tempUnitRaw = String(vitals?.temp?.unit ?? "")
+    .trim()
+    .toLowerCase();
   const tempIsFahrenheit = tempUnitRaw === "1" || tempUnitRaw.startsWith("f");
   const tempCelsius = Number.isFinite(tempReading)
-    ? (tempIsFahrenheit ? ((tempReading - 32) * 5) / 9 : tempReading)
+    ? tempIsFahrenheit
+      ? ((tempReading - 32) * 5) / 9
+      : tempReading
     : null;
 
   return [
@@ -330,7 +386,11 @@ function buildDerivedVitalRows(fields = {}) {
       test: "Blood Oxygen Saturation",
       result: Number.isFinite(bloodOxygen) ? String(bloodOxygen) : "N/A",
       unit: "%",
-      flag: Number.isFinite(bloodOxygen) ? (bloodOxygen < 95 ? "Low" : "Normal") : "",
+      flag: Number.isFinite(bloodOxygen)
+        ? bloodOxygen < 95
+          ? "Low"
+          : "Normal"
+        : "",
     },
     {
       test: "Systolic Blood Pressure",
@@ -370,10 +430,21 @@ function buildDerivedLabNotes(fields = {}) {
 }
 
 // handles download lab data card pdf
-export function downloadLabDataCardPdf(item, versionObj, resourceName = "Lab Data Card") {
-  const fields = versionObj?.fields || item?.versions?.[0]?.fields || item?.fields || {};
+export function downloadLabDataCardPdf(
+  item,
+  versionObj,
+  resourceName = "Lab Data Card",
+) {
+  const fields =
+    versionObj?.fields || item?.versions?.[0]?.fields || item?.fields || {};
   const patientName = pad(get(fields, ["patient", "name"], "")) || "Patient";
-  const patientDob = pad(get(fields, ["patient", "date_of_birth"], get(fields, ["patient", "dob"], "")));
+  const patientDob = pad(
+    get(
+      fields,
+      ["patient", "date_of_birth"],
+      get(fields, ["patient", "dob"], ""),
+    ),
+  );
   const vitalRows = buildDerivedVitalRows(fields);
   const notes = buildDerivedLabNotes(fields);
 
@@ -415,7 +486,9 @@ export function downloadLabDataCardPdf(item, versionObj, resourceName = "Lab Dat
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(COLORS.crimsonDark);
-  doc.text(resourceName || "Lab Data Card", pageWidth / 2, y, { align: "center" });
+  doc.text(resourceName || "Lab Data Card", pageWidth / 2, y, {
+    align: "center",
+  });
   y += 24;
 
   doc.setFont("helvetica", "normal");
@@ -436,8 +509,13 @@ export function downloadLabDataCardPdf(item, versionObj, resourceName = "Lab Dat
 
   vitalRows.forEach((row) => {
     const values = [row.test, row.result, row.unit, ""];
-    const wrapped = values.map((value, idx) => doc.splitTextToSize(String(value ?? "N/A"), colWidths[idx] - 8));
-    const rowHeight = Math.max(24, ...wrapped.map((lines) => lines.length * lineHeight + rowPaddingY * 2));
+    const wrapped = values.map((value, idx) =>
+      doc.splitTextToSize(String(value ?? "N/A"), colWidths[idx] - 8),
+    );
+    const rowHeight = Math.max(
+      24,
+      ...wrapped.map((lines) => lines.length * lineHeight + rowPaddingY * 2),
+    );
     ensureRowSpace(rowHeight);
     let x = tableX;
     wrapped.forEach((lines, idx) => {
@@ -459,7 +537,9 @@ export function downloadLabDataCardPdf(item, versionObj, resourceName = "Lab Dat
   doc.text("Additional Clinical Inputs (Lab-Relevant)", margin, y);
   y += 10;
 
-  const noteLines = notes.length ? notes.map((line) => `- ${line}`) : ["- None provided"];
+  const noteLines = notes.length
+    ? notes.map((line) => `- ${line}`)
+    : ["- None provided"];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(COLORS.body);
@@ -477,7 +557,13 @@ export function downloadLabDataCardPdf(item, versionObj, resourceName = "Lab Dat
 // handles build door note pdf file name
 function buildDoorNotePdfFileName(fields = {}) {
   const name = sanitizeFilePart(get(fields, ["patient", "name"], ""));
-  const reason = sanitizeFilePart(get(fields, ["admin", "reson_for_visit"], get(fields, ["patient", "visit_reason"], "")));
+  const reason = sanitizeFilePart(
+    get(
+      fields,
+      ["admin", "reson_for_visit"],
+      get(fields, ["patient", "visit_reason"], ""),
+    ),
+  );
   if (name && reason) return `door-note-${name}-${reason}.pdf`;
   if (name) return `door-note-${name}.pdf`;
   if (reason) return `door-note-${reason}.pdf`;
@@ -486,7 +572,10 @@ function buildDoorNotePdfFileName(fields = {}) {
 
 // handles create door note pdf file
 export function createDoorNotePdfFile(script = {}, fileName = "") {
-  const fields = script?.fields && typeof script.fields === "object" ? script.fields : (script || {});
+  const fields =
+    script?.fields && typeof script.fields === "object"
+      ? script.fields
+      : script || {};
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -529,14 +618,19 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
 
   // handles draw field
   const drawField = (label, value) => {
-    const clean = value === undefined || value === null ? "" : String(value).trim();
+    const clean =
+      value === undefined || value === null ? "" : String(value).trim();
     const valueText = clean || "None";
-    const wrapWidth = Math.max(40, pageWidth - marginLeft - marginRight - VALUE_INDENT);
+    const wrapWidth = Math.max(
+      40,
+      pageWidth - marginLeft - marginRight - VALUE_INDENT,
+    );
     doc.setFont("helvetica", "normal");
     doc.setFontSize(valueSize);
     doc.setTextColor(COLORS.body);
     const wrapped = doc.splitTextToSize(valueText, wrapWidth);
-    const blockHeight = lineHeight + Math.max(lineHeight, wrapped.length * lineHeight) + 6;
+    const blockHeight =
+      lineHeight + Math.max(lineHeight, wrapped.length * lineHeight) + 6;
     ensureSpace(blockHeight);
 
     doc.setFont("helvetica", "bold");
@@ -554,14 +648,22 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
 
   // handles draw list field
   const drawListField = (label, entries) => {
-    const lines = (entries || []).map((entry) => String(entry || "").trim()).filter(Boolean);
+    const lines = (entries || [])
+      .map((entry) => String(entry || "").trim())
+      .filter(Boolean);
     const finalLines = lines.length ? lines : ["None"];
-    const wrapWidth = Math.max(40, pageWidth - marginLeft - marginRight - VALUE_INDENT);
+    const wrapWidth = Math.max(
+      40,
+      pageWidth - marginLeft - marginRight - VALUE_INDENT,
+    );
     doc.setFont("helvetica", "normal");
     doc.setFontSize(valueSize);
     doc.setTextColor(COLORS.body);
-    const wrapped = finalLines.flatMap((line) => doc.splitTextToSize(`- ${line}`, wrapWidth));
-    const blockHeight = lineHeight + Math.max(lineHeight, wrapped.length * lineHeight) + 6;
+    const wrapped = finalLines.flatMap((line) =>
+      doc.splitTextToSize(`- ${line}`, wrapWidth),
+    );
+    const blockHeight =
+      lineHeight + Math.max(lineHeight, wrapped.length * lineHeight) + 6;
     ensureSpace(blockHeight);
 
     doc.setFont("helvetica", "bold");
@@ -577,24 +679,12 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
     y += Math.max(lineHeight, wrapped.length * lineHeight) + 6;
   };
 
-  // handles draw heart marker
-  const drawHeartMarker = (cx, cy, size = 12) => {
-    const radius = size * 0.28;
-    const lobeY = cy - size * 0.18;
+  // handles draw circle marker
+  const drawCircleMarker = (cx, cy, size = 12) => {
     doc.setFillColor(176, 12, 38);
     doc.setDrawColor(255, 255, 255);
     doc.setLineWidth(0.8);
-    doc.circle(cx - radius, lobeY, radius, "FD");
-    doc.circle(cx + radius, lobeY, radius, "FD");
-    doc.triangle(
-      cx - radius * 2,
-      lobeY,
-      cx + radius * 2,
-      lobeY,
-      cx,
-      cy + size * 0.75,
-      "FD"
-    );
+    doc.circle(cx, cy, size * 0.4, "FD");
   };
 
   // handles draw symptom diagram
@@ -611,24 +701,33 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
       return;
     }
 
-    const rawMarkers = get(fields, ["sp", "current_ill_history", "symptom_diagram"], []);
+    const rawMarkers = get(
+      fields,
+      ["sp", "current_ill_history", "symptom_diagram"],
+      [],
+    );
     const markers = (Array.isArray(rawMarkers) ? rawMarkers : [rawMarkers])
       .map((m) => ({ x: Number(m?.x), y: Number(m?.y) }))
       .filter((m) => Number.isFinite(m.x) && Number.isFinite(m.y));
 
     try {
       const props = doc.getImageProperties(hpiDiagramDataUrl);
-      const ratio = props?.width && props?.height ? props.height / props.width : 1;
-      const maxDiagramWidth = Math.min(300, pageWidth - marginLeft - marginRight);
+      const ratio =
+        props?.width && props?.height ? props.height / props.width : 1;
+      const maxDiagramWidth = Math.min(
+        300,
+        pageWidth - marginLeft - marginRight,
+      );
       const width = Math.max(140, maxDiagramWidth);
       const height = Math.max(40, width * ratio);
       ensureSpace(height + 10);
-      const imageX = marginLeft + (pageWidth - marginLeft - marginRight - width) / 2;
+      const imageX =
+        marginLeft + (pageWidth - marginLeft - marginRight - width) / 2;
       doc.addImage(hpiDiagramDataUrl, "PNG", imageX, y, width, height);
       markers.forEach((marker) => {
         const x = imageX + Math.max(0, Math.min(1, marker.x)) * width;
-        const heartY = y + Math.max(0, Math.min(1, marker.y)) * height;
-        drawHeartMarker(x, heartY, 12);
+        const markerY = y + Math.max(0, Math.min(1, marker.y)) * height;
+        drawCircleMarker(x, markerY, 12);
       });
       y += height + 8;
       doc.setFont("helvetica", "normal");
@@ -641,17 +740,23 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
     }
   };
 
-  const doorTempReadingRaw = get(fields, ["patient", "vitals", "temp", "reading"], "");
+  const doorTempReadingRaw = get(
+    fields,
+    ["patient", "vitals", "temp", "reading"],
+    "",
+  );
   const doorTempReading = Number(doorTempReadingRaw);
-  const doorTempUnitRaw = String(get(fields, ["patient", "vitals", "temp", "unit"], "")).toLowerCase();
-  const doorIsFahrenheit = doorTempUnitRaw === "1" || doorTempUnitRaw.startsWith("f");
-  const doorTempPair = Number.isFinite(doorTempReading) && doorTempReading > 0
-    ? (
-      doorIsFahrenheit
+  const doorTempUnitRaw = String(
+    get(fields, ["patient", "vitals", "temp", "unit"], ""),
+  ).toLowerCase();
+  const doorIsFahrenheit =
+    doorTempUnitRaw === "1" || doorTempUnitRaw.startsWith("f");
+  const doorTempPair =
+    Number.isFinite(doorTempReading) && doorTempReading > 0
+      ? doorIsFahrenheit
         ? `${doorTempReading.toFixed(1)}� F / ${(((doorTempReading - 32) * 5) / 9).toFixed(1)}� C`
         : `${doorTempReading.toFixed(1)}� C / ${((doorTempReading * 9) / 5 + 32).toFixed(1)}� F`
-    )
-    : "";
+      : "";
 
   const vitalLines = [
     `Heart Rate: ${pad(get(fields, ["patient", "vitals", "heart_rate"], "")) || "None"} beats/min`,
@@ -661,12 +766,19 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
     `Blood Oxygen Saturation: ${pad(get(fields, ["patient", "vitals", "blood_oxygen"], "")) || "None"} %`,
     doorTempPair || "None",
   ];
-  const includeDoorNoteVitalsRaw = get(fields, ["patient", "vitals_included_on_door_note"], true);
+  const includeDoorNoteVitalsRaw = get(
+    fields,
+    ["patient", "vitals_included_on_door_note"],
+    true,
+  );
   // handles include door note vitals
   const includeDoorNoteVitals = (() => {
     if (includeDoorNoteVitalsRaw === false) return false;
-    if (typeof includeDoorNoteVitalsRaw === "number") return includeDoorNoteVitalsRaw !== 0;
-    const lowered = String(includeDoorNoteVitalsRaw || "").trim().toLowerCase();
+    if (typeof includeDoorNoteVitalsRaw === "number")
+      return includeDoorNoteVitalsRaw !== 0;
+    const lowered = String(includeDoorNoteVitalsRaw || "")
+      .trim()
+      .toLowerCase();
     if (!lowered) return true;
     return !["false", "0", "no", "off"].includes(lowered);
   })();
@@ -674,32 +786,43 @@ export function createDoorNotePdfFile(script = {}, fileName = "") {
   drawTitle("Door Note and Learner Instruction");
   drawSection("Instructions to Learners:");
   drawField("Patient Name", get(fields, ["patient", "name"], ""));
-  const patientDob = get(fields, ["patient", "date_of_birth"], get(fields, ["patient", "dob"], ""));
+  const patientDob = get(
+    fields,
+    ["patient", "date_of_birth"],
+    get(fields, ["patient", "dob"], ""),
+  );
   drawField("Date of Birth", formatDobWithAge(patientDob));
   if (includeDoorNoteVitals) {
     drawListField("Vital Signs", vitalLines);
   } else {
     drawField("Vital Signs", "Not included on door note");
   }
-  drawField("Diagnosis", get(fields, ["admin", "diagnosis"], get(fields, ["admin", "reson_for_visit"], get(fields, ["patient", "visit_reason"], ""))));
+  drawField(
+    "Diagnosis",
+    get(
+      fields,
+      ["admin", "diagnosis"],
+      get(
+        fields,
+        ["admin", "reson_for_visit"],
+        get(fields, ["patient", "visit_reason"], ""),
+      ),
+    ),
+  );
   drawField("Context", get(fields, ["patient", "context"], ""));
   drawField("Task", get(fields, ["patient", "task"], ""));
-  drawField("Patient Encounter Duration", get(fields, ["patient", "encounter_duration"], ""));
+  drawField(
+    "Patient Encounter Duration",
+    get(fields, ["patient", "encounter_duration"], ""),
+  );
   drawSymptomDiagram();
 
   const resolvedName = sanitizeFilePart(fileName);
   const safeName = resolvedName.endsWith(".pdf")
     ? resolvedName
-    : (resolvedName ? `${resolvedName}.pdf` : buildDoorNotePdfFileName(fields));
+    : resolvedName
+      ? `${resolvedName}.pdf`
+      : buildDoorNotePdfFileName(fields);
   const blob = doc.output("blob");
   return new File([blob], safeName, { type: "application/pdf" });
 }
-
-
-
-
-
-
-
-
-
