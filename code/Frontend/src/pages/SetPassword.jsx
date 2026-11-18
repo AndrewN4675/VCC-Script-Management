@@ -44,7 +44,7 @@ const SetPassword = () => {
       {!token ? (
         <p role="alert" className="text-sm text-red-700">
           This link is missing its token. Open the link from your approval email, or{" "}
-          <Link to="/request-access" className="text-[#981e32] hover:underline">
+          <Link to="/request-access" className="text-[#981e32] underline hover:no-underline">
             request access
           </Link>{" "}
           again.

@@ -242,7 +242,7 @@ const ActorDatabase = () => {
   return (
     <section className="w-full">
       <header className="mb-4">
-        <Link to="/dashboard" className="inline-flex text-sm font-semibold text-[#981e32] hover:underline">
+        <Link to="/dashboard" className="inline-flex text-sm font-semibold text-[#981e32] underline hover:no-underline">
           Back to Dashboard
         </Link>
         <h1 className="mt-1 text-3xl font-semibold text-[#b4152b]">Actor Database</h1>

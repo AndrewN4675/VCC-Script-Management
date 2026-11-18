@@ -646,7 +646,7 @@ const ScriptDetail = ({ requestInlineOnly = false }) => {
     return (
       <section className="w-full p-4 text-center">
         <div className="text-gray-600">
-          Admin access required. <Link className="text-[#981e32] font-semibold hover:underline" to="/dashboard">Back</Link>
+          Admin access required. <Link className="text-[#981e32] font-semibold underline hover:no-underline" to="/dashboard">Back</Link>
         </div>
       </section>
     );
@@ -656,7 +656,7 @@ const ScriptDetail = ({ requestInlineOnly = false }) => {
     return (
       <section className="w-full p-4 text-center">
         <div className="text-gray-600">
-          Not found. <Link className="text-[#981e32] font-semibold hover:underline" to={requestInlineOnly ? "/requests" : "/forms-search"}>Back</Link>
+          Not found. <Link className="text-[#981e32] font-semibold underline hover:no-underline" to={requestInlineOnly ? "/requests" : "/forms-search"}>Back</Link>
         </div>
       </section>
     );

@@ -2931,7 +2931,7 @@ const RequestNew = ({ mode = "request" }) => {
                           href="https://icd.who.int/browse10/2016/en"
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs font-semibold text-[#981e32] hover:underline"
+                          className="text-xs font-semibold text-[#981e32] underline hover:no-underline"
                         >
                           Browse ICD-10
                         </a>
@@ -3612,7 +3612,7 @@ const RequestNew = ({ mode = "request" }) => {
                       href="https://thecenter.wsu.edu/resources/"
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-block text-xs font-semibold text-[#981e32] hover:underline"
+                      className="inline-block text-xs font-semibold text-[#981e32] underline hover:no-underline"
                     >
                       https://thecenter.wsu.edu/resources/
                     </a>
@@ -5570,7 +5570,7 @@ const RequestNew = ({ mode = "request" }) => {
                         <span>{file.name}</span>
                         <button
                           type="button"
-                          className="text-xs font-semibold text-red-600 hover:underline"
+                          className="text-xs font-semibold text-red-600 underline hover:no-underline"
                           onClick={() => removeAttachment(idx)}
                         >
                           Remove
@@ -6006,7 +6006,7 @@ const RequestNew = ({ mode = "request" }) => {
                       href="https://thecenter.wsu.edu/resources/"
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs font-semibold text-[#981e32] hover:underline"
+                      className="text-xs font-semibold text-[#981e32] underline hover:no-underline"
                     >
                       https://thecenter.wsu.edu/resources/
                     </a>

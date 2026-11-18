@@ -473,7 +473,7 @@ const FormsSearch = () => {
             </svg>
             {showFilters ? "Hide search" : "Search library"}
           </button>
-          <Link to="/" className="text-sm text-[#981e32] font-semibold hover:underline">Home</Link>
+          <Link to="/" className="text-sm text-[#981e32] font-semibold underline hover:no-underline">Home</Link>
         </div>
       </div>
 
