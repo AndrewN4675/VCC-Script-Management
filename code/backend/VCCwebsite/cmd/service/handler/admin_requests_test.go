@@ -166,8 +166,17 @@ func TestAdminApprove(t *testing.T) {
 	id := pendingID(t, "pat@example.com")
 
 	rec := env.do(http.MethodPost, fmt.Sprintf("/api/admin/requests/%d/approve", id), env.adminToken, `{"role":"script viewer"}`)
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body)
+	}
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Errorf("Cache-Control = %q, want no-store", rec.Header().Get("Cache-Control"))
+	}
+	var resp struct {
+		SetupLink string `json:"setup_link"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("response is not JSON: %v (%q)", err, rec.Body)
 	}
 
 	status, role, hash := userState(t, id)
@@ -182,6 +191,9 @@ func TestAdminApprove(t *testing.T) {
 	token := emailedToken(t, body)
 	if token == "" || auth.HashSetupToken(token) != *hash {
 		t.Error("emailed token does not match the stored hash")
+	}
+	if resp.SetupLink != auth.SetupLink(testAppURL, token) {
+		t.Errorf("setup_link = %q, want the emailed link", resp.SetupLink)
 	}
 	if strings.Contains(body, *hash) {
 		t.Error("email contains the stored hash instead of only the raw token")
@@ -202,8 +214,11 @@ func TestAdminApproveLinkIgnoresRequestHost(t *testing.T) {
 	req.Header.Set("Referer", "https://evil.example.net/admin")
 	rec := httptest.NewRecorder()
 	env.mux.ServeHTTP(rec, req)
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), "evil") {
+		t.Errorf("response link built from request headers: %q", rec.Body)
 	}
 
 	body := env.mailer.sent[0].body
@@ -219,9 +234,10 @@ func TestAdminApproveNeverLogsToken(t *testing.T) {
 
 	ok := pendingID(t, "ok@example.com")
 	rec := env.do(http.MethodPost, fmt.Sprintf("/api/admin/requests/%d/approve", ok), env.adminToken, `{"role":"requester"}`)
-	if rec.Code != http.StatusNoContent || rec.Body.Len() != 0 {
-		t.Fatalf("approve: %d %q, want 204 with empty body", rec.Code, rec.Body)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("approve: %d %q, want 200", rec.Code, rec.Body)
 	}
+	okLink := rec.Body.String()
 
 	env.mailer.err = errors.New("smtp timeout")
 	failed := pendingID(t, "fail@example.com")
@@ -235,9 +251,14 @@ func TestAdminApproveNeverLogsToken(t *testing.T) {
 		if strings.Contains(logs.String(), token) {
 			t.Errorf("raw token for %s appears in logs:\n%s", m.to, logs)
 		}
+		// The failed approval's response must not leak its token. The successful
+		// one returns its link on purpose, so it is checked separately.
 		if strings.Contains(rec.Body.String(), token) {
-			t.Errorf("raw token for %s appears in the response", m.to)
+			t.Errorf("raw token for %s appears in the failed response", m.to)
 		}
+	}
+	if !strings.Contains(okLink, "/set-password?token=") {
+		t.Errorf("successful approve response has no setup link: %q", okLink)
 	}
 }
 
@@ -264,7 +285,7 @@ func TestAdminApproveRejects(t *testing.T) {
 		t.Errorf("rejected approvals changed status to %q", status)
 	}
 
-	if rec := env.do(http.MethodPost, path, env.adminToken, `{"role":"requester"}`); rec.Code != http.StatusNoContent {
+	if rec := env.do(http.MethodPost, path, env.adminToken, `{"role":"requester"}`); rec.Code != http.StatusOK {
 		t.Fatalf("first approve: %d", rec.Code)
 	}
 	if rec := env.do(http.MethodPost, path, env.adminToken, `{"role":"admin"}`); rec.Code != http.StatusConflict {
@@ -311,7 +332,7 @@ func TestAdminApproveEmailFailureLeavesPending(t *testing.T) {
 	// The admin can retry, and the retry issues a different token.
 	env.mailer.err = nil
 	rec = env.do(http.MethodPost, fmt.Sprintf("/api/admin/requests/%d/approve", id), env.adminToken, `{"role":"requester"}`)
-	if rec.Code != http.StatusNoContent {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("retry: status = %d", rec.Code)
 	}
 	if emailedToken(t, env.mailer.sent[1].body) == token {

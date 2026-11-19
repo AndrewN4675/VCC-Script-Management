@@ -9,6 +9,8 @@ vi.mock("../api/client", () => import("../test/apiMock"));
 const PAT = { id: 1, name: "Pat Doe", email: "pat@example.com", created_at: "2026-11-04 18:00:00" };
 const SAM = { id: 2, name: "Sam Lee", email: "sam@example.com", created_at: "2026-11-04 19:00:00" };
 
+const LINK = "https://app.example.com/set-password?token=abc123";
+
 const rowFor = async (email) => (await screen.findByText(email)).closest("tr");
 
 describe("Admin Requests page", () => {
@@ -32,7 +34,7 @@ describe("Admin Requests page", () => {
   });
 
   it("requires a role before approving, then approves and removes the row", async () => {
-    api.approveAccessRequest.mockResolvedValue("");
+    api.approveAccessRequest.mockResolvedValue({ setup_link: LINK });
     const user = userEvent.setup();
     render(<AdminRequests />);
     const row = await rowFor("pat@example.com");
@@ -44,8 +46,68 @@ describe("Admin Requests page", () => {
 
     expect(api.approveAccessRequest).toHaveBeenCalledWith(1, "script viewer");
     expect(await screen.findByRole("status")).toHaveTextContent("Approved pat@example.com as script viewer");
-    expect(screen.queryByText("pat@example.com")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Role for pat@example.com")).not.toBeInTheDocument();
     expect(screen.getByText("sam@example.com")).toBeInTheDocument();
+  });
+
+  it("shows the setup link after approving, and copies it", async () => {
+    api.approveAccessRequest.mockResolvedValue({ setup_link: LINK });
+    const user = userEvent.setup();
+    render(<AdminRequests />);
+    const row = await rowFor("pat@example.com");
+    await user.selectOptions(within(row).getByLabelText("Role for pat@example.com"), "requester");
+    await user.click(within(row).getByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByLabelText("Setup link for pat@example.com")).toHaveValue(LINK);
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(await navigator.clipboard.readText()).toBe(LINK);
+    expect(await screen.findByText("Copied")).toBeInTheDocument();
+  });
+
+  it("falls back to selecting the link when the clipboard is unavailable", async () => {
+    api.approveAccessRequest.mockResolvedValue({ setup_link: LINK });
+    const user = userEvent.setup();
+    render(<AdminRequests />);
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    document.execCommand = vi.fn().mockReturnValue(false);
+
+    const row = await rowFor("pat@example.com");
+    await user.selectOptions(within(row).getByLabelText("Role for pat@example.com"), "requester");
+    await user.click(within(row).getByRole("button", { name: "Approve" }));
+    await user.click(await screen.findByRole("button", { name: "Copy link" }));
+
+    expect(document.execCommand).toHaveBeenCalledWith("copy");
+    expect(await screen.findByText("Press Ctrl+C to copy")).toBeInTheDocument();
+  });
+
+  it("keeps every link until it is dismissed", async () => {
+    api.approveAccessRequest
+      .mockResolvedValueOnce({ setup_link: `${LINK}1` })
+      .mockResolvedValueOnce({ setup_link: `${LINK}2` });
+    const user = userEvent.setup();
+    render(<AdminRequests />);
+    for (const email of ["pat@example.com", "sam@example.com"]) {
+      const row = await rowFor(email);
+      await user.selectOptions(within(row).getByLabelText(`Role for ${email}`), "requester");
+      await user.click(within(row).getByRole("button", { name: "Approve" }));
+    }
+
+    expect(await screen.findByLabelText("Setup link for sam@example.com")).toHaveValue(`${LINK}2`);
+    expect(screen.getByLabelText("Setup link for pat@example.com")).toHaveValue(`${LINK}1`);
+
+    await user.click(screen.getAllByRole("button", { name: "Done" })[0]);
+    expect(screen.queryByLabelText("Setup link for pat@example.com")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Setup link for sam@example.com")).toBeInTheDocument();
+  });
+
+  it("does not show a link after denying", async () => {
+    api.denyAccessRequest.mockResolvedValue("");
+    const user = userEvent.setup();
+    render(<AdminRequests />);
+    const row = await rowFor("sam@example.com");
+    await user.click(within(row).getByRole("button", { name: "Deny" }));
+    await screen.findByRole("status");
+    expect(screen.queryByRole("button", { name: "Copy link" })).not.toBeInTheDocument();
   });
 
   it("asks for confirmation before granting admin", async () => {
