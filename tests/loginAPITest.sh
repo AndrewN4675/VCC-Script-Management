@@ -188,7 +188,7 @@ run_test "Approve unknown id" 404 POST /api/admin/requests/999999/approve \
 run_test "Approve non-numeric id" 400 POST /api/admin/requests/abc/approve \
     '{"role":"requester"}' "Bearer $token"
 
-run_test "Approve pending user as script viewer" 204 POST "/api/admin/requests/$pat_id/approve" \
+run_test "Approve pending user as script viewer" 200 POST "/api/admin/requests/$pat_id/approve" \
     '{"role":"script viewer"}' "Bearer $token"
 
 run_test "Approve same user again" 409 POST "/api/admin/requests/$pat_id/approve" \

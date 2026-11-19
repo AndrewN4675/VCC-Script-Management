@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 
 const ROLES =["requester", "script viewer", "script editor", "admin"];
@@ -54,12 +54,84 @@ const RequestRow = ({ request, busy, onApprove, onDeny }) => {
   );
 };
 
+// Copies text to the clipboard. The async Clipboard API only exists on https or
+// localhost, and the app is often served over plain http on a local network, so
+// fall back to selecting the field and using the older copy command.
+const copyText = async (text, input) => {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the older method
+  }
+  try {
+    input?.select();
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  }
+};
+
+// handles setup link: shown once after approving, since only a hash of the
+// token is stored and the link cannot be shown again.
+const SetupLink = ({ invite, onDismiss }) => {
+  const inputRef = useRef(null);
+  const [copyState, setCopyState] = useState("");
+
+  // handles copy
+  const handleCopy = async () => {
+    const ok = await copyText(invite.link, inputRef.current);
+    setCopyState(ok ? "Copied" : "Press Ctrl+C to copy");
+  };
+
+  return (
+    <div className="mb-4 rounded-md border border-gray-300 bg-gray-50 p-4 text-sm">
+      <p className="mb-2">
+        Send this link to <strong>{invite.email}</strong> so they can set their password. It works once and expires in
+        48 hours. Copy it now; it can&apos;t be shown again.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={inputRef}
+          readOnly
+          aria-label={`Setup link for ${invite.email}`}
+          value={invite.link}
+          onFocus={(e) => e.target.select()}
+          className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-2 py-1 font-mono text-xs"
+        />
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded-md bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+        >
+          Copy link
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md border border-gray-300 px-3 py-1 hover:bg-gray-100"
+        >
+          Done
+        </button>
+      </div>
+      {copyState ? (
+        <p role="status" className="mt-2 text-green-700">
+          {copyState}
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
 // handles admin requests
 const AdminRequests = () => {
   const [requests, setRequests] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState(null); // { type: "success" | "error", text }
   const [busyId, setBusyId] = useState(null);
+  const [invites, setInvites] = useState([]); // [{ email, link }] shown until dismissed
 
   // handles load
   const load = useCallback(async () => {
@@ -76,13 +148,14 @@ const AdminRequests = () => {
   }, [load]);
 
   // handles run action
-  const runAction = async (request, action, successText) => {
+  const runAction = async (request, action, successText, onResult) => {
     setBusyId(request.id);
     setMessage(null);
     try {
-      await action();
+      const result = await action();
       setRequests((list) => list.filter((r) => r.id !== request.id));
       setMessage({ type: "success", text: successText });
+      onResult?.(result);
     } catch (err) {
       if (err?.status === 404 || err?.status === 409) {
         setMessage({ type: "error", text: `${request.email} is no longer pending.` });
@@ -108,7 +181,12 @@ const AdminRequests = () => {
     runAction(
       request,
       () => api.approveAccessRequest(request.id, role),
-      `Approved ${request.email} as ${role}. A setup email has been sent.`
+      `Approved ${request.email} as ${role}.`,
+      (result) => {
+        if (result?.setup_link) {
+          setInvites((list) => [...list, { email: request.email, link: result.setup_link }]);
+        }
+      }
     );
   };
 
@@ -127,6 +205,13 @@ const AdminRequests = () => {
           {message.text}
         </p>
       ) : null}
+      {invites.map((invite) => (
+        <SetupLink
+          key={invite.link}
+          invite={invite}
+          onDismiss={() => setInvites((list) => list.filter((i) => i !== invite))}
+        />
+      ))}
       {loadError ? (
         <p role="alert" className="text-sm text-red-700">
           {loadError}

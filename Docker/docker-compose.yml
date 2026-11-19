@@ -41,6 +41,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       STATIC_PATH: /app/static
       ACTOR_DB_PATH: /app/data/actor.db
+      # Login accounts. Kept in the actor_db volume so they survive rebuilds.
+      AUTH_DB_PATH: /app/data/auth.db
       ACTOR_SCHEMA_PATH: /app/internal/actorDB/actor_schema.sql
       # Okta OAuth Configuration (disabled; kept for reference. The full working
       # version is at git tag "okta-reference".)

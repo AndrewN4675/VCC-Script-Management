@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -21,6 +23,7 @@ var (
 	ErrInvalidRole  = errors.New("invalid role")
 
 	ErrInvalidSetupToken = errors.New("invalid or expired setup link")
+	ErrAlreadyActive     = errors.New("an active account already uses this email")
 )
 
 func ValidRole(role string) bool {
@@ -97,6 +100,41 @@ func ApproveRequest(id int64, role string) (name, email, token string, err error
 		return "", "", "", err
 	}
 	return name, email, token, nil
+}
+
+// SetupLink is the URL where the holder of token sets their password.
+func SetupLink(appURL, token string) string {
+	return strings.TrimRight(appURL, "/") + "/set-password?token=" + url.QueryEscape(token)
+}
+
+// InviteAdmin creates an approved admin for email, or re-issues the invite if
+// they were already invited, and returns the raw setup token. Used to create
+// the first admin without anyone choosing their password for them. An email that
+// already belongs to an active account is left untouched (ErrAlreadyActive).
+func InviteAdmin(name, email string) (string, error) {
+	token, hash, err := NewSetupToken()
+	if err != nil {
+		return "", err
+	}
+	expires := time.Now().UTC().Add(SetupTokenTTL).Format(sqliteTime)
+
+	res, err := DB.Exec(
+		`INSERT INTO users (name, email, role, status, setup_token_hash, setup_token_expires_at)
+		 VALUES (?, ?, 'admin', 'approved', ?, ?)
+		 ON CONFLICT(email) DO UPDATE SET name = excluded.name, role = 'admin', status = 'approved',
+		   setup_token_hash = excluded.setup_token_hash, setup_token_expires_at = excluded.setup_token_expires_at
+		 WHERE users.status <> 'active'`,
+		strings.TrimSpace(name), NormalizeEmail(email), hash, expires,
+	)
+	if err != nil {
+		return "", err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return "", err
+	} else if n == 0 {
+		return "", ErrAlreadyActive
+	}
+	return token, nil
 }
 
 // RevertApproval puts a user approved with token back to pending, e.g. when

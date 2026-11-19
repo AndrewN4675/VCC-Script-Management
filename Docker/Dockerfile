@@ -17,6 +17,7 @@ WORKDIR /build
 COPY code/backend/VCCwebsite/ .
 RUN go mod download
 RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/service/main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -o seed-admin ./cmd/seed-admin
 
 # Stage 3: Runtime image
 FROM alpine:3.19
@@ -25,6 +26,8 @@ WORKDIR /app
 
 # Copy binary
 COPY --from=backend-builder /build/server .
+# Admin setup tool: docker compose exec backend ./seed-admin
+COPY --from=backend-builder /build/seed-admin .
 
 # Copy SQLite schema and seed db
 COPY --from=backend-builder /build/internal/actorDB/actor_schema.sql ./internal/actorDB/actor_schema.sql

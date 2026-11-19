@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 )
 
 // RegisterAdminRoutes adds the access-request admin endpoints, each behind the
-// auth middleware and RequireAdmin. appURL is the base of the emailed setup link.
+// auth middleware and RequireAdmin. appURL is the base of the setup link.
 func RegisterAdminRoutes(mux *http.ServeMux, am *auth.AuthMiddleware, mailer auth.Mailer, appURL string) {
 	admin := func(h http.HandlerFunc) http.Handler { return am.Middleware(auth.RequireAdmin(h)) }
 	mux.Handle("GET /api/admin/requests", admin(listRequests()))
@@ -57,7 +55,7 @@ func approveRequest(mailer auth.Mailer, appURL string) http.HandlerFunc {
 			return
 		}
 
-		link := strings.TrimRight(appURL, "/") + "/set-password?token=" + url.QueryEscape(token)
+		link := auth.SetupLink(appURL, token)
 		body := fmt.Sprintf("Hi %s,\n\nYour access request was approved. Set your password within 48 hours:\n%s", name, link)
 		if err := mailer.Send(email, "Set your password", body); err != nil {
 			log.Printf("send setup email to %s: %v", email, err)
@@ -67,7 +65,11 @@ func approveRequest(mailer auth.Mailer, appURL string) http.HandlerFunc {
 			http.Error(w, "could not send setup email; request is still pending", http.StatusBadGateway)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		// Also returned so an admin can pass the link on themselves when email
+		// isn't set up. The link is a credential, so keep it out of caches.
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
+		json.NewEncoder(w).Encode(map[string]string{"setup_link": link})
 	}
 }
 
