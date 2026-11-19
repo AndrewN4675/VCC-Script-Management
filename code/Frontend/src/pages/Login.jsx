@@ -87,7 +87,7 @@ const Login = () => {
       </form>
       <p className="mt-6 text-sm text-gray-600">
         Need an account?{" "}
-        <Link to="/request-access" className="text-[#981e32] hover:underline">
+        <Link to="/request-access" className="text-[#981e32] underline hover:no-underline">
           Request access
         </Link>
       </p>

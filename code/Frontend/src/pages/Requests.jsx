@@ -472,7 +472,7 @@ const Requests = () => {
       <section className="w-full space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-[#b4152b]">Script Requests</h1>
-          <Link to="/dashboard" className="text-sm text-[#981e32] font-semibold hover:underline">Back to Dashboard</Link>
+          <Link to="/dashboard" className="text-sm text-[#981e32] font-semibold underline hover:no-underline">Back to Dashboard</Link>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-gray-700">
           Admin access required to manage script requests. Please sign in as admin to continue.
@@ -489,7 +489,7 @@ const Requests = () => {
           <p className="text-sm text-gray-600"></p>
         </div>
         <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="text-sm text-[#981e32] font-semibold hover:underline">Back to Dashboard</Link>
+          <Link to="/dashboard" className="text-sm text-[#981e32] font-semibold underline hover:no-underline">Back to Dashboard</Link>
         </div>
       </div>
 
