@@ -25,7 +25,7 @@ const getCurrentVersionEntry = (item) => {
 };
 
 // handles forms list row
-const FormsListRow = ({ item, onArtifacts, onPropose, onDelete, onSendBackToRequests, onClone }) => {
+const FormsListRow = ({ item, onArtifacts, onPropose, onDelete, onSendBackToRequests, onClone, onExport }) => {
   const location = useLocation();
   const [manageOpen, setManageOpen] = useState(false);
   const manageMenuRef = useRef(null);
@@ -101,6 +101,7 @@ const FormsListRow = ({ item, onArtifacts, onPropose, onDelete, onSendBackToRequ
           <ScriptPdfMenu label="Preview" onSelect={handlePreview} />
           <ScriptPdfMenu label="Download" onSelect={handleDownload} />
           {onClone ? <button onClick={() => onClone(item)}>Clone</button> : null}
+          {onExport ? <button onClick={() => onExport(item)}>Export</button> : null}
           {onDelete || onSendBackToRequests ? (
             <div className="relative" ref={manageMenuRef}>
               <button
